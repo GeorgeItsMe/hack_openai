@@ -31,9 +31,13 @@ Vercel is configured in `vercel.json` to run `npm run build:landing` and publish
 - Mobile navigation, responsive layouts, FAQ accordion, roadmap and privacy dialogs.
 - Scroll reveals and subtle animation with reduced-motion support.
 
+## Full feature overview
+
+The page presents six primary scenarios: connected task collection, focus sessions, tab organization, session insights, tasks from selected text, and context-aware distraction handling. A keyboard-accessible feature catalog separates the website demo, Chrome extension capabilities, and planned features. The roadmap also covers workspace AI chat, MCP and coding agents, messenger tasks, device sync, and richer reports. See [docs/FEATURES.md](./docs/FEATURES.md) for the capability mapping.
+
 ## Product scope
 
-This is an interactive landing page preview. It does not collect payments, create accounts, read actual browser tabs, or connect third-party accounts. Upcoming extension and integration features are labeled as planned. The landing page has not been wired to the separately developed FocusTab extension/server.
+This is an interactive landing page preview. It does not collect payments, create accounts, read actual browser tabs, or connect third-party accounts. The catalog distinguishes existing extension capabilities from planned integrations. AI-powered extension features need a connected service and authorized context. The landing page has not been wired to the separately developed Tabby extension/server.
 
 No fabricated user counts, reviews, or customer endorsements are included. The chart in the feature section is labeled as an illustration; workspace progress comes from interactions in the preview.
 
@@ -46,4 +50,5 @@ Google Fonts is the only external resource loaded by the landing page. The logo,
 - `src/components.tsx`: logo, icons, and accessible dialog.
 - `src/styles.css`: landing design and responsive layout.
 - `src/workspace.css`: workspace and preview layout.
-- `public/favicon.svg`: Tabby brand icon.
+- `public/brand/`: supplied Tabby logos, contextual cat variants, service illustrations, and original extension icons (SVG/PNG). Components use these local assets directly.
+- `public/favicon.svg`: copy of the supplied Tabby favicon.
