@@ -8,7 +8,7 @@
 
 **[Download Tabby.zip](https://tabby-pi.vercel.app/downloads/Tabby.zip)** — ready to install in Chrome. Unzip it, enable Developer mode, then choose Load unpacked and select the Tabby folder. [Three-step guide](docs/INSTALLATION.md). AI and connected tools have separate optional setup below.
 
-**Tabby × Ambiguous:** our Ambiguous workspace brings together the product brief, architecture decisions, delivery tasks and release evidence. We also built an Ambiguous MCP integration into the extension. [Open the workspace references](docs/AMBIGUOUS_WORKSPACE.md) · [See the demo walkthrough](docs/AMBIGUOUS_DEMO.md).
+**Tabby × Ambiguous:** we used Ambiguous to organize Tabby's product brief, architecture decisions, delivery tasks and release evidence, and used Ambi to review and refine our demo narrative. We also built an Ambiguous MCP integration into the extension. [Open the workspace references](docs/AMBIGUOUS_WORKSPACE.md) · [See the demo walkthrough](docs/AMBIGUOUS_DEMO.md).
 
 [![Watch Tabby in a real browser](public/demo/tabby-browser-poster.jpg)](public/demo/tabby-browser-demo.mp4)
 
