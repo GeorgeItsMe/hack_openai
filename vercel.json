@@ -4,5 +4,24 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build:landing",
   "devCommand": "npm run dev:landing",
-  "outputDirectory": "dist-landing"
+  "outputDirectory": "dist-landing",
+  "headers": [
+    {
+      "source": "/downloads/Tabby.zip",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/zip"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"Tabby.zip\""
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ]
 }

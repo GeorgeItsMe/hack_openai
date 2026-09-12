@@ -28,7 +28,7 @@ Vercel is configured in `vercel.json` to run `npm run build:landing` and publish
 - Example tab groups with working external links.
 - Progress view, task counts, and per-project task filters.
 - Workspace modal, keyboard shortcut (Command/Ctrl + K), Escape, focus restoration, and native dialog focus containment.
-- Primary Try buttons open a desktop Chrome installation guide, with source download, build commands, manual loading steps, and optional local AI setup. The guide accurately identifies the source as an active development snapshot; no packaged release or store listing is implied.
+- Primary Try buttons open a three-step Chrome installation guide: download the prebuilt Tabby.zip, unzip it, and load the Tabby folder. The main path needs no terminal or build. Optional companion connections and troubleshooting stay collapsed. This is a manual-install preview, not a Chrome Web Store listing.
 - “See it in action”, “Open your workspace”, and the installation guide's preview button keep the no-install demo available separately.
 - Mobile navigation, responsive layouts, FAQ accordion, roadmap and privacy dialogs.
 - Scroll reveals and subtle animation with reduced-motion support.
@@ -52,7 +52,9 @@ Google Fonts is the only external resource loaded by the landing page. The logo,
 - `src/App.tsx`: landing sections and content.
 - `src/Workspace.tsx`: interactive preview and shared state.
 - `src/components.tsx`: logo, icons, and accessible dialog.
-- `src/InstallationGuide.tsx`, `src/installation-guide.css`: installation steps, command copying, and optional AI, MCP, Google, and sync setup.
+- `src/InstallationGuide.tsx`, `src/installation-guide.css`: three visual installation steps, direct Tabby.zip download, address copying and optional setup links.
+- `public/downloads/Tabby.zip`, `Tabby.json`: reviewed prebuilt extension and integrity metadata.
+- `scripts/package-extension.mjs --landing`, `tests/package-browser.ts`: packaging and clean-install verification; see [installation](docs/INSTALLATION.md).
 - `src/feature-catalog.ts`, `src/ProductFeatures.tsx`: audited capability descriptions, the five MCP tools, catalog tabs, and feature illustrations.
 - `src/styles.css`: landing design and responsive layout.
 - `src/workspace.css`: workspace and preview layout.

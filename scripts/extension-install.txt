@@ -1,0 +1,37 @@
+TABBY — A LITTLE MORE HEADSPACE
+
+INSTALL IN CHROME
+
+1. Unzip Tabby.zip.
+   Mac: double-click the ZIP.
+   Windows: right-click the ZIP, choose Extract All, then Extract.
+   Keep the extracted Tabby folder somewhere permanent, such as Documents.
+
+2. Open Chrome and paste this into the address bar:
+   chrome://extensions
+   Turn on Developer mode in the top-right corner.
+
+3. Click Load unpacked in the top-left corner.
+   Select the extracted Tabby folder containing manifest.json.
+   Select the folder, not the ZIP file.
+
+Click Chrome's puzzle-piece icon, pin Tabby, then click the Tabby cat.
+Add your first task or start a focus session. You're in.
+
+KEEP THE FOLDER
+Chrome loads Tabby from this folder. Keep it in the same place after installing.
+If you see a manifest error, choose the inner folder that contains manifest.json.
+
+WHAT'S READY
+Tasks, projects, notes, saved links, tab search, duplicate cleanup and timers.
+AI, Google and MCP need separate local companion setup and your own connections.
+The browser ZIP contains no server, API key or account credentials.
+
+This is a manual-install preview, not a Chrome Web Store installation.
+Chrome on a desktop or laptop is required. Managed computers may disable
+Developer mode; ask your administrator if that option is unavailable.
+
+Visual instructions: https://tabby-pi.vercel.app/ (choose Try Tabby)
+Optional connected tools: https://github.com/GeorgeItsMe/hack_openai
+
+Made with care, and probably too many tabs.

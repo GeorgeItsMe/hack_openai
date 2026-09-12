@@ -1,5 +1,12 @@
 # Tabby — project handoff
 
+## Prebuilt landing download — 12 September 2026
+
+- Try Tabby now downloads the ready-to-install `public/downloads/Tabby.zip`; the archive and Chrome extension are named **Tabby**. Users unzip, open `chrome://extensions`, enable Developer mode and use Load unpacked. No Node.js or terminal is needed for basic installation.
+- Build an updated archive with `npm run build` then `node scripts/package-extension.mjs --landing`. The packager retains `dist/tabby-extension.zip`, also writes `dist/Tabby.zip`, and publishes ZIP/integrity metadata under `public/downloads/`. Vercel still hosts only static landing files.
+- `node --import tsx tests/package-browser.ts` verifies the actual ZIP in a clean Chrome profile. It also accepts the production HTTPS download URL to check response headers and bytes. No server or model calls. See [installation and release steps](docs/INSTALLATION.md).
+- The browser ZIP includes `INSTALL-TABBY.txt`, bundles and icons; no source server, credentials or personal workspace. AI, Google and MCP retain separate optional local setup.
+
 Update: English is the primary product language. The extension now defaults to English and normalizes saved language settings; existing user content is preserved. Historical notes below may describe the earlier bilingual UI. MCP implementation belongs to the other agent. See the English root README for current installation and ZIP packaging commands.
 
 Актуально на 12 сентября 2026. Корень на этом компьютере: `/Users/main/vs_projects/hack`.

@@ -1,51 +1,73 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowUpRight, Check, Copy, Download, Monitor, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Check, Copy, Download, FolderOpen, Monitor, Pin, Puzzle, Sparkles } from 'lucide-react';
 import { Cat } from './components';
 import './installation-guide.css';
 
 const repository = 'https://github.com/GeorgeItsMe/hack_openai';
-const buildCommands = 'npm ci\nnpm run setup\nnpm run build';
 
-function CopyButton({ text, label }: { text: string; label: string }) {
+function CopyAddress() {
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   async function copy() {
-    try { await navigator.clipboard.writeText(text); setStatus('copied'); }
+    try { await navigator.clipboard.writeText('chrome://extensions'); setStatus('copied'); }
     catch { setStatus('failed'); }
   }
-  return <span className="install-copy-control"><button type="button" onClick={copy} aria-label={label}>{status === 'copied' ? <Check size={14} /> : <Copy size={14} />} {status === 'copied' ? 'Copied' : 'Copy'}</button><span role="status" className={status === 'failed' ? 'install-copy-error' : undefined}>{status === 'failed' ? 'Select the text to copy it manually.' : status === 'copied' ? `${label}: copied.` : ''}</span></span>;
+  return <div className="install-address"><code>chrome://extensions</code><span className="install-copy-control"><button type="button" onClick={copy} aria-label="Copy Chrome extensions address">{status === 'copied' ? <Check size={16} /> : <Copy size={16} />} {status === 'copied' ? 'Copied!' : 'Copy address'}</button><span role="status" className={status === 'failed' ? 'install-copy-error' : undefined}>{status === 'failed' ? 'Select the address and copy it manually.' : status === 'copied' ? 'Address copied. Paste it into Chrome’s address bar.' : ''}</span></span></div>;
 }
 
 export function InstallationGuide({ onDemo }: { onDemo: () => void }) {
+  const [downloadStarted, setDownloadStarted] = useState(false);
   return <>
     <div className="install-intro">
       <div className="install-mark"><Cat size={35} variant="workspace" /></div>
-      <span className="eyebrow">A SIDEKICK IN YOUR ACTUAL BROWSER</span>
-      <h2>Your tabs.<br /><span className="serif-word">A little more together.</span></h2>
-      <p>Give Tabby a home in Chrome. Here’s how to install the developer preview.</p>
-      <div className="install-requirements"><span><Monitor size={14} /> Desktop Chrome 120+</span><span>Node.js 24</span><span>Manual installation</span></div>
+      <span className="eyebrow">A LITTLE SETUP. A LOT OF HEADSPACE.</span>
+      <h2>Say hello<br /><span className="serif-word">to Tabby.</span></h2>
+      <p>Three little steps. Your new sidekick is ready.</p>
+      <div className="install-requirements"><span><Monitor size={15} /> Chrome on a computer</span><span><Check size={15} /> Ready-to-install ZIP</span></div>
     </div>
-
-    <div className="install-release-note"><strong>A little early. A little hands-on.</strong><p>This is a developer preview, installed from source. There’s no Chrome Web Store listing or packaged release yet. The public source may lag behind the latest prototype features while updates are being published, and a build may need fixes. Connected features need separate setup and permissions.</p></div>
-    <p className="install-mobile-note">Use Chrome on a computer to install the extension. On your phone? <button onClick={onDemo}>Try the browser demo.</button></p>
+    <p className="install-mobile-note">On your phone? Install Tabby in Chrome on a computer, or <button onClick={onDemo}>try the browser demo here.</button></p>
 
     <ol className="install-steps">
-      <li><span className="install-step-number">01</span><div><h3>Bring Tabby home.</h3><p>Download the project source and unzip it. You’ll need <a href="https://nodejs.org/en/download" target="_blank" rel="noreferrer">Node.js 24</a> installed on your computer.</p><a className="install-download" href={`${repository}/archive/refs/heads/main.zip`}><Download size={16} /> Download source ZIP <ArrowUpRight size={15} /></a><small>This contains the source code. Build it in the next step.</small></div></li>
-      <li><span className="install-step-number">02</span><div><h3>Make your little sidekick.</h3><p>Open a terminal in the unzipped project folder, where <code>package.json</code> lives, and run:</p><div className="install-code"><div><span>In the project folder</span><CopyButton text={buildCommands} label="Copy build commands" /></div><pre><code>{buildCommands}</code></pre></div><p>The finished extension will be in <code>dist/extension</code>.</p></div></li>
-      <li><span className="install-step-number">03</span><div><h3>A new home. Fewer rabbit holes.</h3><p>Paste this address into Chrome:</p><div className="install-address"><code>chrome://extensions</code><CopyButton text="chrome://extensions" label="Copy Chrome extensions address" /></div><p>Turn on <strong>Developer mode</strong>, choose <strong>Load unpacked</strong>, and select the project’s <code>dist/extension</code> folder. Pin Tabby from Chrome’s extensions menu and click the cat.</p><small>Tasks, tab tools, and timers work without connecting AI.</small></div></li>
+      <li><span className="install-step-number">1</span><div>
+        <h3>Download &amp; unzip Tabby.</h3>
+        <a className="install-download" href="/downloads/Tabby.zip" download="Tabby.zip" onClick={() => setDownloadStarted(true)}><Download size={19} /> Download Tabby <span className="install-zip-badge">ZIP</span></a>
+        <span className="install-file-label">Tabby.zip · The extension is already built.</span>
+        <p><strong>Mac:</strong> double-click the ZIP.<br /><strong>Windows:</strong> right-click → <strong>Extract All</strong> → <strong>Extract</strong>.</p>
+        <p className="install-download-status" role="status">{downloadStarted ? 'Next: unzip Tabby.zip, then follow step 2 below.' : 'Keep the unzipped Tabby folder somewhere permanent, like Documents.'}</p>
+      </div></li>
+      <li><span className="install-step-number">2</span><div>
+        <h3>Open Chrome’s extensions.</h3>
+        <p>Copy this address and paste it into Chrome’s address bar:</p>
+        <CopyAddress />
+        <p>Turn on <strong>Developer mode</strong> in the top-right corner.</p>
+        <div className="install-chrome-example" aria-label="Illustration: Developer mode is in the top-right corner of Chrome’s Extensions page"><span>Extensions</span><span>Developer mode <i aria-hidden="true" /></span></div>
+      </div></li>
+      <li><span className="install-step-number">3</span><div>
+        <h3>Choose the Tabby folder.</h3>
+        <p>Click <strong>Load unpacked</strong> in the top-left corner. Select the <strong>Tabby folder</strong> you just unzipped.</p>
+        <div className="install-folder-example" aria-label="Illustration: Load unpacked, then select the Tabby folder"><span>Load unpacked</span><ArrowRight size={18} aria-hidden="true" /><span><FolderOpen size={23} /> Tabby</span></div>
+        <small>Choose the folder containing <code>manifest.json</code>, not the ZIP file.</small>
+      </div></li>
     </ol>
 
-    <details className="install-ai"><summary><Sparkles size={17} /><span>Connect a little AI help <small>Optional · your own provider connection</small></span></summary><div>
-      <p>For context-aware nudges and AI suggestions, add your GPT Tunnel API key to the local <code>.env</code> file created by setup. Keep the generated settings, then start the companion server:</p>
-      <div className="install-code"><div><span>In the same project folder</span><CopyButton text="npm run server" label="Copy server command" /></div><pre><code>npm run server</code></pre></div>
-      <p>Keep that terminal open. In Tabby’s <strong>Settings</strong>, paste the value from <code>.local/pairing.txt</code> into <strong>Local server connection token</strong> and choose <strong>Connect &amp; check</strong>.</p>
-      <p>Review the disclosure and turn on <strong>Allow AI analysis</strong>. Visible page text has its own toggle and site permission. Your provider may charge for AI usage.</p>
-      <small>The provider key belongs in <code>.env</code>; the extension uses the separate pairing token.</small>
+    <div className="install-ready"><span className="install-ready-icon"><Cat size={25} /></span><div><strong>There’s a new cat in your browser.</strong><p>Click the <Puzzle size={14} aria-label="puzzle-piece" /> extensions icon, pin <strong>Tabby</strong> <Pin size={13} aria-hidden="true" />, then click the cat. Add a task or start your first focus session.</p></div></div>
+    <p className="install-scope">Tasks, projects, notes, saved links, and timers are ready right away. AI, Google, and MCP need optional companion setup.</p>
+
+    <details className="install-ai"><summary><FolderOpen size={18} /><span>Need a little help installing?</span></summary><div>
+      <p><strong>Can’t see the folder?</strong> Unzip the download first. On Windows, choose Extract All; opening the ZIP alone doesn’t extract it.</p>
+      <p><strong>“Manifest missing”?</strong> Open the extracted folder and look for <code>manifest.json</code>. If it is inside another Tabby folder, select that inner folder.</p>
+      <p><strong>Keep the folder.</strong> Chrome runs Tabby from it, so keep it in the same place after installing.</p>
+      <p><strong>No Developer mode?</strong> A work or school computer may restrict extensions. Ask its administrator or use your own computer.</p>
+      <p>This preview uses Chrome’s manual installation. <a href="https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked" target="_blank" rel="noreferrer">Chrome’s installation guide <ArrowUpRight size={12} /></a></p>
     </div></details>
-
-    <details className="install-ai"><summary><Sparkles size={17} /><span>Bring your MCP assistant along <small>Five local tools · reading and task changes</small></span></summary><div><p>Run <code>npm run setup:mcp</code>, reload Tabby, and open <strong>Settings → MCP access</strong>. Save the separate token from <code>.local/mcp-token.txt</code> and turn on <strong>Allow MCP reading</strong>.</p><p>Enable <strong>Allow MCP task changes</strong> only if your assistant should create and complete tasks. Once enabled, these actions do not need another in-panel click. The five tools read focus, tasks, and tabs, or create and complete tasks.</p><p>Configure your local stdio client using the <a href={`${repository}/blob/main/docs/MCP.md`} target="_blank" rel="noreferrer">MCP setup guide</a>. The SDK client is verified; a Claude Desktop configuration is included. Cloud-hosted ChatGPT cannot directly reach this local bridge. MCP itself makes no AI calls.</p></div></details>
-    <details className="install-ai"><summary><Sparkles size={17} /><span>Connect Google, when you’re ready <small>Calendar and Gmail · separate OAuth setup</small></span></summary><div><p>The local Google connectors show your agenda and inbox previews, import chosen items as tasks, and offer reviewed AI drafts. They need a Google Cloud Desktop OAuth client and the running companion server.</p><p>Follow the <a href={`${repository}/blob/main/docs/GOOGLE_AND_CHAT.md`} target="_blank" rel="noreferrer">Google and chat setup guide</a>, then connect each service in <strong>Calendar &amp; mail</strong>. Access is read-only. Live sign-in with a real Google account is still awaiting verification.</p></div></details>
-    <details className="install-ai"><summary><Sparkles size={17} /><span>Let your workspace follow you <small>Optional Chrome account sync</small></span></summary><div><p>In <strong>Settings → Workspace sync</strong>, enable sync on each computer using the same Chrome account and extension ID. It includes projects, tasks, notes, and saved links; timers, history, account connections, and permissions stay local.</p><p>Chrome storage limits apply. Delivery between two computers is not yet verified. See the <a href={`${repository}/blob/main/docs/PROJECTS_AND_SYNC.md`} target="_blank" rel="noreferrer">workspace guide</a> for setup and limits.</p></div></details>
-
-    <div className="install-footer"><a href={`${repository}#extension-and-local-server`} target="_blank" rel="noreferrer">Full setup guide on GitHub <ArrowUpRight size={15} /></a><button className="button button-dark" onClick={onDemo}>Just looking? Try the browser demo <ArrowRight size={16} /></button><p>No install. No tab-shaming. Make yourself at home.</p></div>
+    <details className="install-ai"><summary><Sparkles size={18} /><span>Want AI or connected tools? <small>Optional · set up when you’re ready</small></span></summary><div>
+      <p>Your downloaded Tabby is ready for everyday tasks and focus. Connected features use a separate local companion and your own accounts. The ZIP contains the browser extension; it does not include the companion server.</p>
+      <ul className="install-connection-links">
+        <li><a href={`${repository}#extension-and-local-server`} target="_blank" rel="noreferrer">AI companion setup <ArrowUpRight size={14} /></a><span>Your own provider connection; usage charges may apply.</span></li>
+        <li><a href={`${repository}/blob/main/docs/MCP.md`} target="_blank" rel="noreferrer">Connect an MCP assistant <ArrowUpRight size={14} /></a><span>Five local tools, with separate read and task-write permissions.</span></li>
+        <li><a href={`${repository}/blob/main/docs/GOOGLE_AND_CHAT.md`} target="_blank" rel="noreferrer">Connect Google Calendar &amp; Gmail <ArrowUpRight size={14} /></a><span>Developer OAuth setup; live Google sign-in is not yet verified.</span></li>
+        <li><a href={`${repository}/blob/main/docs/PROJECTS_AND_SYNC.md`} target="_blank" rel="noreferrer">Optional Chrome workspace sync <ArrowUpRight size={14} /></a><span>Enable in Settings. Delivery between computers is not yet verified.</span></li>
+      </ul>
+    </div></details>
+    <div className="install-footer"><button className="button button-dark" onClick={onDemo}>Just looking? Try the browser demo <ArrowRight size={16} /></button><p>Free preview · Manual installation · No Chrome Web Store listing yet.<br />No install in the demo. No tab-shaming anywhere.</p></div>
   </>;
 }
