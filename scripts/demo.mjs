@@ -29,13 +29,21 @@ const command=(type,payload={})=>panel.evaluate(async ({type,payload})=>{const r
 await command('SETTINGS',{settings:{pairToken:token,consent:true,readText:true,mode:'soft',language:'en'}});
 await command('CONNECT');
 if(process.argv.includes('--ready')){
- const work=browser.pages().find(p=>p.url().includes('44321/react')) || await browser.newPage(); await work.goto('http://127.0.0.1:44321/react');
- const cats=browser.pages().find(p=>p.url().includes('44321/cats')) || await browser.newPage(); await cats.goto('http://127.0.0.1:44321/cats'); await work.bringToFront();
+ const old=await command('GET');if(old.session&&old.session.phase!=='finished')await command('PAUSE');
+ const web=process.argv.includes('--web');
+ const workUrl=web?'https://react.dev/learn/managing-state':'http://127.0.0.1:44321/react';
+ const catsUrl=web?'https://www.youtube.com/watch?v=J---aiyznGQ':'http://127.0.0.1:44321/cats';
+ const work=await browser.newPage(); await work.goto(workUrl);
+ const cats=await browser.newPage(); await cats.goto(catsUrl,{waitUntil:'domcontentloaded'}); await work.bringToFront();
  await panel.bringToFront();
  await panel.evaluate(()=>{const b=document.createElement('button');b.id='open-native-demo';b.style.cssText='position:fixed;right:24px;bottom:80px;z-index:2147483647;background:#ff7745;color:#272923;padding:12px 20px;border-radius:10px';b.textContent='Open side panel';b.onclick=async()=>{const w=await chrome.windows.getCurrent();await chrome.sidePanel.open({windowId:w.id});};document.body.append(b);});
  await panel.locator('#open-native-demo').click();await panel.locator('#open-native-demo').evaluate(el=>el.remove());
+ const state=await command('GET');
+ await panel.close();
+ for(const page of browser.pages())if(page.url()==='about:blank')await page.close();
  await work.bringToFront();
- console.log('READY: real DeepSeek connected; native Side Panel open; session paused. Click Resume to continue.');
+ console.log(`READY: ${state.ai.model} connected; latest extension and native Side Panel open. ${state.session&&state.session.phase!=='finished'?'Click Resume.':'Enter a goal and click Start focusing.'}`);
+ if(web)console.log('On each website, use Focus → Allow access to this site for page text and in-page reminders.');
  await new Promise(resolve=>browser.on('close',resolve));fixture.close();process.exit(0);
 }
 console.log('Real DeepSeek connected. Running the main loop using two prepared demo pages.');

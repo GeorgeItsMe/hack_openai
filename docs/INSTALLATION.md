@@ -21,6 +21,7 @@ From a complete development workspace with Node.js 24:
 ```sh
 npm run build
 node scripts/package-extension.mjs --landing
+node scripts/verify-download.mjs
 node --import tsx tests/package-browser.ts
 npm run build:landing
 ```
@@ -35,4 +36,6 @@ Commit the reviewed ZIP and metadata with the landing update. Vercel serves the 
 node --import tsx tests/package-browser.ts https://tabby-pi.vercel.app/downloads/Tabby.zip
 ```
 
-For this download, the isolated source snapshot passed TypeScript/build and 46 unit/protocol tests. Google/AI fixture results are not claims of live account verification. The package browser check requires no local server or model calls.
+For this download, the isolated source snapshot passed TypeScript/build and 48 unit/protocol tests. Google/AI fixture results are not claims of live account verification. The package browser check requires no local server or model calls.
+
+GitHub Actions checks the freshly built files against the committed ZIP with `scripts/verify-download.mjs`, in addition to type checks, unit tests and the landing build.

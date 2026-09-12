@@ -1,14 +1,16 @@
 import { chromium, expect } from '@playwright/test';
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import assert from 'node:assert/strict';
 import { createApp } from '../src/server/http';
 import type { AppState } from '../src/shared/types';
 
-const extensionPath = resolve('dist/extension');
+const testDir = await mkdtemp(join(tmpdir(), 'tabby-browser-'));
+const extensionPath = join(testDir, 'extension');
+await cp(resolve('dist/extension'), extensionPath, { recursive: true });
 const manifest = JSON.parse(await readFile(join(extensionPath, 'manifest.json'), 'utf8'));
 const id = createHash('sha256').update(Buffer.from(manifest.key, 'base64')).digest('hex').slice(0, 32).replace(/[0-9a-f]/g, c => String.fromCharCode(97 + parseInt(c, 16)));
 const token = 'TEST-ONLY-LOCAL-PAIRING-TOKEN-123456789';
@@ -27,15 +29,21 @@ const provider = {
     return { result, model: 'TEST FIXTURE — not live Astra', usage: { total_tokens: 12 } };
   },
 };
-const api = createApp({ port: 4318, extensionId: id, pairToken: token }, provider as any);
+const config = { port: 0, extensionId: id, pairToken: token };
+const api = createApp(config, provider as any);
 const fixture = createServer((req, res) => {
   const name = req.url?.includes('cats') ? 'Cats entertainment video' : req.url?.includes('unknown') ? 'A page' : req.url?.includes('delayed') ? 'Delayed React tutorial' : 'React authentication tutorial';
   res.setHeader('Content-Type', 'text/html');
   res.end(`<html><head><title>${name}</title></head><body><main><h1>${name}</h1><p>Learn React authentication with a login form. This is a browser test fixture.</p><form><input id="private" value="NEVER_SEND_INPUT"><textarea>NEVER_SEND_TEXTAREA</textarea><p>NEVER_SEND_FORM</p></form><p hidden>NEVER_SEND_HIDDEN</p><p style="opacity:0">NEVER_SEND_INVISIBLE</p><p contenteditable>NEVER_SEND_EDITABLE</p><p>Contact hello@example.com</p></main></body></html>`);
 });
-await new Promise<void>(resolve => api.listen(4318, '127.0.0.1', resolve));
+await new Promise<void>(resolve => api.listen(0, '127.0.0.1', resolve));
+config.port = (api.address() as { port: number }).port;
+for (const name of ['worker.js', 'manifest.json']) {
+  const file = join(extensionPath, name);
+  await writeFile(file, (await readFile(file, 'utf8')).replaceAll('127.0.0.1:4318', `127.0.0.1:${config.port}`));
+}
 await new Promise<void>(resolve => fixture.listen(44320, '127.0.0.1', resolve));
-const profile = await mkdtemp(join(tmpdir(), 'tabby-test-'));
+const profile = join(testDir, 'profile');
 const context = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, viewport: { width: 1440, height: 1150 }, args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`] });
 const logs: string[] = []; const checks: string[] = [];
 const pass = (name: string) => { checks.push(name); console.log('PASS:', name); };
@@ -56,6 +64,16 @@ try {
   await panel.getByRole('button', { name: 'Save task', exact: true }).click();
   assert.equal((await get()).tasks.length, 1); await panel.reload(); assert.equal((await get()).tasks[0].title, 'Build React authentication');
   pass('task creation through real UI and persistence after panel reload');
+  // Explicit presence fixture exercises the real START/RESUME handlers; no model response is mocked here.
+  await worker.evaluate(() => { (globalThis as any).__tabbyIdleQuery = chrome.idle.queryState; chrome.idle.queryState = (async () => 'idle') as typeof chrome.idle.queryState; });
+  await cmd('START', { goal: 'Resume presence regression', taskId: '', minutes: 25 });
+  assert.equal((await get()).session?.away, true);
+  await cmd('PAUSE');
+  await worker.evaluate(() => { chrome.idle.queryState = (async () => 'active') as typeof chrome.idle.queryState; });
+  await cmd('RESUME'); assert.equal((await get()).session?.away, false);
+  await cmd('STOP');
+  await worker.evaluate(() => { chrome.idle.queryState = (globalThis as any).__tabbyIdleQuery; delete (globalThis as any).__tabbyIdleQuery; });
+  pass('Resume refreshes actual presence instead of retaining a stale Away flag (explicit idle-state fixture)');
   await cmd('SETTINGS', { settings: { pairToken: token, consent: true, readText: true, mode: 'strict' } });
   await cmd('CONNECT'); assert.equal((await get()).ai.connected, true);
   pass('real Chrome extension Origin + local token accepted by loopback server');
@@ -63,6 +81,15 @@ try {
   const panelBehavior = await worker.evaluate(() => chrome.sidePanel.getPanelBehavior());
   assert.equal(panelOptions.path, 'sidepanel.html'); assert.equal(panelBehavior.openPanelOnActionClick, true);
   pass('native Side Panel path and extension action behavior are configured');
+  const noAccess = await context.newPage();
+  await noAccess.route('https://tabby-permission.test/', route => route.fulfill({ contentType: 'text/html', body: '<title>Permission check</title><h1>Prepared browser fixture</h1>' }));
+  await noAccess.goto('https://tabby-permission.test/');
+  await panel.getByRole('button', { name: 'Focus', exact: true }).click(); await noAccess.bringToFront();
+  await cmd('START', { goal: 'Check site permission guidance', taskId: '', minutes: 25 });
+  await expect(panel.getByRole('button', { name: 'Allow access to this site', exact: true })).toBeVisible();
+  assert.equal(await worker.evaluate(() => chrome.permissions.contains({ origins: ['https://tabby-permission.test/*'] })), false);
+  await cmd('STOP'); await noAccess.close();
+  pass('Focus explains missing host access and offers a real per-site permission button without granting it automatically');
   const work = await context.newPage(); await work.goto('http://127.0.0.1:44320/watch?video=react'); await work.bringToFront();
   await cmd('START', { goal: 'Build React authentication', taskId: (await get()).tasks[0].id, minutes: 25 });
   await expect.poll(async () => (await get()).assessment?.category, { timeout: 18000 }).toBe('aligned');
@@ -95,6 +122,14 @@ try {
   pass('rapid tab switching is coalesced; no API call before dwell');
   const delayed = await context.newPage(); await delayed.goto('http://127.0.0.1:44320/delayed'); await delayed.bringToFront();
   await expect.poll(() => !!delayedResolve, { timeout: 18000 }).toBe(true);
+  await cmd('PAUSE');
+  assert.equal((await get()).pendingAt, undefined);
+  assert.notEqual((await get()).ai.code, 'ANALYZING');
+  await expect(panel.locator('.compact-assessment')).not.toContainText('Assessing this page');
+  delayedResolve!(); delayedResolve = undefined;
+  await cmd('RESUME'); await delayed.bringToFront();
+  await expect.poll(() => !!delayedResolve, { timeout: 18000 }).toBe(true);
+  pass('pausing an in-flight classification clears the busy indicator; Resume starts a fresh request');
   await cmd('GOAL', { goal: 'Write a different task', taskId: '' }); delayedResolve!(); delayedResolve = undefined;
   await panel.waitForTimeout(400); assert.equal((await get()).assessment, null);
   pass('goal change cancels pending classification; stale response cannot apply');
@@ -128,10 +163,10 @@ try {
   await work.close(); await cmd('RETURN').catch(() => {});
   await cmd('STOP'); assert.equal((await get()).session?.phase, 'finished'); assert.equal(await cats.locator('#tabby-reminder').count(), 0);
   pass('closing work tab is handled; stopping session removes reminders');
-  await panel.bringToFront(); await panel.getByRole('button', { name: 'Switch to English' }).click(); await expect(panel.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
+  await panel.bringToFront(); await expect(panel.locator('html')).toHaveAttribute('lang', 'en'); await expect(panel.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   await panel.getByRole('button', { name: 'Settings', exact: true }).click(); await expect(panel.getByRole('heading', { name: 'Your focus. Your rules.' })).toBeVisible();
   assert.equal(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   pass('English interface and compact settings layout render correctly');
   assert.deepEqual(logs, []); pass('no page or service worker console errors');
   await writeFile('artifacts/browser-test-results.json', JSON.stringify({ type: 'Chrome integration with explicit fake AI responses; NOT live API validation', extensionId: id, checks, requestCount: requests.length, errors: logs }, null, 2));
-} finally { delayedResolve?.(); await context.close(); api.closeAllConnections(); fixture.closeAllConnections(); await Promise.all([new Promise<void>(resolve => api.close(() => resolve())), new Promise<void>(resolve => fixture.close(() => resolve()))]); await rm(profile, { recursive: true, force: true }); }
+} finally { delayedResolve?.(); await context.close(); api.closeAllConnections(); fixture.closeAllConnections(); await Promise.all([new Promise<void>(resolve => api.close(() => resolve())), new Promise<void>(resolve => fixture.close(() => resolve()))]); await rm(testDir, { recursive: true, force: true }); }

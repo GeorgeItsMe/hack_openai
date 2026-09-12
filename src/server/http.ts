@@ -1,8 +1,10 @@
 import { createServer, type IncomingMessage } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { AppError, type Provider } from './provider';
+import type { AmbiguousIntegration } from './ambiguous';
+import type { GoogleIntegration } from './google';
 export interface ServerConfig { port: number; extensionId: string; pairToken: string }
-export function createApp(config: ServerConfig, provider: Pick<Provider, 'run' | 'status'>) {
+export function createApp(config: ServerConfig, provider: Pick<Provider, 'run' | 'status'>, google?: GoogleIntegration, ambiguous?: AmbiguousIntegration) {
   const origin = `chrome-extension://${config.extensionId}`; let active = 0; let requests: number[] = [];
   const safeToken = (value: string) => { const a = Buffer.from(value), b = Buffer.from(config.pairToken); return b.length >= 32 && a.length === b.length && timingSafeEqual(a, b); };
   return createServer(async (req, res) => {
@@ -12,7 +14,7 @@ export function createApp(config: ServerConfig, provider: Pick<Provider, 'run' |
     res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') { res.setHeader('Access-Control-Allow-Methods', 'POST'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Tabby-Token'); res.setHeader('Access-Control-Allow-Private-Network', 'true'); res.writeHead(204); res.end(); return; }
     if (!safeToken(String(req.headers['x-tabby-token'] ?? ''))) return send(401, { error: { code: 'PAIRING_REQUIRED' } });
-    if (req.method !== 'POST' || !['/status', '/ai'].includes(req.url ?? '')) return send(404, { error: { code: 'NOT_FOUND' } });
+    if (req.method !== 'POST' || !['/status', '/ai', '/ambiguous/status', '/ambiguous/connect', '/ambiguous/disconnect', '/ambiguous/channels', '/ambiguous/messages', '/ambiguous/send', '/google/status', '/google/connect', '/google/calendar', '/google/gmail', '/google/disconnect', '/google/cancel'].includes(req.url ?? '')) return send(404, { error: { code: 'NOT_FOUND' } });
     if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: { code: 'INVALID_REQUEST' } });
     const now = Date.now(); requests = requests.filter(t => now - t < 60000);
     if (active >= 3 || requests.length >= 20) { res.setHeader('Retry-After', '60'); return send(429, { error: { code: 'LOCAL_RATE_LIMIT' } }); }
@@ -20,7 +22,30 @@ export function createApp(config: ServerConfig, provider: Pick<Provider, 'run' |
     const controller = new AbortController(); res.on('close', () => { if (!res.writableEnded) controller.abort(); });
     try {
       const body = await readBody(req);
-      const result = req.url === '/status' ? await provider.status() : await provider.run(body, controller.signal);
+      let result: unknown;
+      if (req.url?.startsWith('/ambiguous/')) {
+        if (!ambiguous) throw new AppError('AMBIGUOUS_NOT_CONFIGURED', 503);
+        if (!['/ambiguous/messages', '/ambiguous/send'].includes(req.url) && (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length)) throw new AppError('INVALID_REQUEST', 400);
+        switch (req.url) {
+          case '/ambiguous/status': result = await ambiguous.status(); break;
+          case '/ambiguous/connect': result = await ambiguous.connect(); break;
+          case '/ambiguous/disconnect': result = await ambiguous.disconnect(); break;
+          case '/ambiguous/channels': result = await ambiguous.channels(controller.signal); break;
+          case '/ambiguous/messages': result = await ambiguous.messages(body, controller.signal); break;
+          case '/ambiguous/send': result = await ambiguous.send(body, controller.signal); break;
+        }
+      } else if (req.url?.startsWith('/google/')) {
+        if (!google) throw new AppError('GOOGLE_NOT_CONFIGURED', 503);
+        if (req.url !== '/google/connect' && (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length)) throw new AppError('INVALID_REQUEST', 400);
+        switch (req.url) {
+          case '/google/status': result = await google.status(); break;
+          case '/google/connect': result = await google.connect(body); break;
+          case '/google/calendar': result = await google.calendar(controller.signal); break;
+          case '/google/gmail': result = await google.gmail(controller.signal); break;
+          case '/google/disconnect': result = await google.disconnect(); break;
+          case '/google/cancel': google.cancel(); result = await google.status(); break;
+        }
+      } else result = req.url === '/status' ? await provider.status() : await provider.run(body, controller.signal);
       send(200, result);
     } catch (e) {
       const error = e instanceof AppError ? e : new AppError('SERVER_ERROR', 500);

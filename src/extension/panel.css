@@ -24,3 +24,40 @@ input:checked{accent-color:var(--orange)}
 @media(max-width:365px){.tabby-logo{width:101px;height:29px}}
 /* Keep the compact timer caption and subtitle inside the garden at every font size. */
 @media(max-width:760px){.timer-card:has(.active-controls) .timer-center{padding-block:8px}}
+
+/* Project workspace, local MCP controls and factual analytics. */
+.project-picker { display: block; margin: 16px 0; }
+.project-picker select { margin-top: 8px; }
+.project-overview, .project-section, .project-empty { padding: 24px; margin: 16px 0; }
+.project-empty { text-align: center; color: var(--muted, #77796f); }
+.project-section h2, .project-overview h2 { font-size: 19px; margin: 0 0 12px; }
+.project-section form label, .project-section > label { display: block; margin: 12px 0; }
+.project-section input, .project-section textarea { margin-top: 6px; }
+.inline-check { display: inline-flex; align-items: center; gap: 8px; }
+.inline-check input { width: auto; }
+.project-task { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #dedfd5; min-width: 0; }
+.project-task .tab-title { min-width: 0; flex: 1; }
+.project-task strong, .project-task small { overflow-wrap: anywhere; }
+.preserve-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
+.project-note { border-top: 1px solid #dedfd5; padding: 18px 0; }
+.project-note h3 { font-size: 15px; margin: 0; }
+.pin-controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.pin-controls select { flex: 1; min-width: 160px; }
+.insight-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 22px 0; }
+.insight-metrics strong { display: block; font-size: 25px; color: #272923; }
+.insight-metrics span { display: block; color: #77796f; font-size: 12px; margin-top: 6px; }
+.insights-table { overflow-x: auto; }
+.insights-table table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+.insights-table th, .insights-table td { padding: 10px 6px; border-bottom: 1px solid #dedfd5; }
+@media (max-width: 560px) { .project-section, .project-overview { padding: 18px; } .project-task .text-button { flex-shrink: 0; } }
+@media (max-width: 760px) {
+  .sidebar nav { display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 3px; padding-bottom: 2px; }
+  .sidebar .nav-item { flex: 1 0 54px; width: auto; }
+}
+.ambiguous-connection h2 { display: flex; align-items: center; gap: 9px; }
+.ambiguous-message { padding: 18px 0; border-top: 1px solid var(--line, #dedfd5); margin-top: 16px; }
+.ambiguous-message .card-top { gap: 12px; align-items: flex-start; }
+.ambiguous-message small { font-size: 10px; color: var(--muted, #77796f); }
+.ambiguous-message p { margin: 12px 0; overflow-wrap: anywhere; }
+.ambiguous-report textarea { white-space: pre-wrap; font-size: 12px; line-height: 1.7; }
+.ambiguous-report .eyebrow { margin-bottom: 16px; }

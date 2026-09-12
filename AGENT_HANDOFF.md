@@ -1,5 +1,31 @@
 # Tabby — project handoff
 
+## GitHub source and download synchronization (12 September 2026)
+
+A fresh checkout-equivalent snapshot was installed with `npm ci` and verified with `npm run build`, 48 passing tests in `npm test`, and the landing production build. Separate Chrome checks passed: 23 core scenarios, seven project/MCP scenarios (including all five MCP tools), seven Google/chat scenarios, and five Ambiguous scenarios. Browser integrations use explicit fixtures; this verification made no paid AI calls and did not authorize a real Google or Ambiguous account.
+
+The published `public/downloads/Tabby.zip` is version 1.0.3 and was rebuilt from the same source. `node scripts/verify-download.mjs` checks its complete file list, every built file, install instructions, manifest version, byte count and SHA-256 metadata. `.github/workflows/verify.yml` repeats dependency installation, extension build, unit tests, this archive check and landing build for pushes to main and pull requests. When extension source changes, rebuild and run `node scripts/package-extension.mjs --landing` before committing the download. Vercel continues to host only the static landing and public downloads.
+
+## Runtime repair and recording handoff — 12 September 2026
+
+- User took over video recording and requested functional verification. Recording automation/server was stopped. The old loopback process was serving obsolete code: `/google/status` and `/ambiguous/status` returned 404. Restarted the actual 4318 server with current source; both now return 200 and accurately report unconfigured accounts. DeepSeek remains connected.
+- Fixed stale `ANALYZING`/dwell indicators after request cancellation, loss of focus and worker recovery. `RESUME` now checks current idle/window presence instead of retaining an old Away flag. The Focus card offers per-site permission directly when host access is missing. No permissions are granted automatically.
+- `tests/browser.ts` now uses an ephemeral AI-fixture port and a private bundle copy, so it can run alongside the real server. Updated its English-only assertion; added regressions for resumed presence, cancelled requests and missing site access. Final core run: 23 Chrome checks plus native Side Panel smoke. Unit/protocol suite: 48 passing tests. Google/chat (7), workspace/MCP (7), Ambiguous (5) fixture scenario groups also passed. The refreshed ZIP passed clean installation, task persistence and native panel checks.
+- `node scripts/live-extension-check.mjs` performed 7 checks through the installed production extension, real local backend and real DeepSeek, using two explicitly prepared local source pages: classification, actual in-page reminder, return, task draft/save, real Chrome groups and persistence. Report: `.local/live-extension-check.json`. A separate English chat request through the real backend returned a validated task proposal (`.local/live-chat-en-check.json`). These do not prove live Google or outbound Ambiguous account connectivity.
+- Rebuilt `dist/extension` and refreshed `dist/Tabby.zip`, `dist/tabby-extension.zip`, and the landing download. `npm run demo -- --ready --web` is running with actual React/YouTube pages and the latest native panel; the user must grant those sites for text/reminders. The ready mode now really pauses an existing session, removes its temporary standalone panel tab, and reports the appropriate start/resume instruction. See [recording steps](docs/RECORDING.md).
+
+## Real Ambiguous delivery workflow — 12 September 2026
+
+The user clarified that hackathon judges need to see Ambiguous used in building/delivering Tabby. A signed-in Chrome tab was available in workspace `hackaimbz`; the general chat and task list were initially empty. Through the actual Ambiguous UI, created **Tabby — Hackathon** and **TASK-001: Verify and refresh the Tabby hackathon download**, moved the task to In Progress, performed the packaging/verification work, saved its factual result and marked it Done. The task's activity records creation, description updates and In Progress → Done. It is open at `https://app.ambiguous.ai/tasks/TASK-001` for the demo. No chat messages or comments were sent.
+
+The public ZIP initially differed from the latest production build. Ran `npm run build` and `node scripts/package-extension.mjs --landing`; verified archive integrity, exact browser-bundle equality, metadata hash/size, Ambiguous UI/commands and absence of local credentials/private files. Report: `artifacts/ambiguous-delivery-verification.json`. Updated the README and added [the 25-second walkthrough](docs/AMBIGUOUS_DEMO.md). This verifies real Ambiguous project/task use during final delivery, **not live OAuth/MCP chat delivery from the extension**. Do not attribute earlier coding to Ambiguous without evidence. Website ZIP assets were refreshed locally; this turn did not deploy the website.
+
+The workspace now also contains three native Ambiguous documents: **Tabby / 01 — Product brief**, **Tabby / 02 — Architecture & MCP decisions**, and **Tabby / 03 — Release evidence & demo runbook**. Each was saved through the signed-in UI with actual prototype scope, code/test evidence and cross-links. [Workspace index](docs/AMBIGUOUS_WORKSPACE.md) contains their exact URLs. These documents consolidate existing work during final preparation; their creation timestamps were not altered. README and the demo narration now put this project workspace at the center of the Tabby × Ambiguous story.
+
+The real project board has six tasks: TASK-001–004 are Done (release verification, product brief, architecture record and release runbook); TASK-005–006 remain To Do (live Ambiguous OAuth/MCP round trip and sync between two computers). Saved descriptions link the native documents and define acceptance criteria. These statuses were read back from the UI; the project progress is 67%.
+
+Also used the real built-in **Ambi** assistant for a read-only review of the three project documents. The first response only acknowledged the request after reading them; a follow-up returned three concrete story improvements and the live-proof requirements. Applied its outcome-first narration and recorded the review in the native runbook and local walkthrough. The conversation URL is in the workspace index. No team-chat messages or task comments were posted; these were prompts to Ambi. The board and release-evidence document were left open for the demo.
+
 ## Prebuilt landing download — 12 September 2026
 
 - Try Tabby now downloads the ready-to-install `public/downloads/Tabby.zip`; the archive and Chrome extension are named **Tabby**. Users unzip, open `chrome://extensions`, enable Developer mode and use Load unpacked. No Node.js or terminal is needed for basic installation.
@@ -7,7 +33,36 @@
 - `node --import tsx tests/package-browser.ts` verifies the actual ZIP in a clean Chrome profile. It also accepts the production HTTPS download URL to check response headers and bytes. No server or model calls. See [installation and release steps](docs/INSTALLATION.md).
 - The browser ZIP includes `INSTALL-TABBY.txt`, bundles and icons; no source server, credentials or personal workspace. AI, Google and MCP retain separate optional local setup.
 
-Update: English is the primary product language. The extension now defaults to English and normalizes saved language settings; existing user content is preserved. Historical notes below may describe the earlier bilingual UI. MCP implementation belongs to the other agent. See the English root README for current installation and ZIP packaging commands.
+## Ambiguous priority update — 12 September 2026
+
+- Implemented the user's requested outbound integration with `https://app.ambiguous.ai/mcp`: explicit channel/message reads → editable Tabby task → real focus session → preview and explicit reply to the original thread. The default is official SDK Streamable HTTP; `AMBIGUOUS_TRANSPORT=rest` selects the documented REST alternative. DeepSeek is unchanged.
+- `src/server/ambiguous.ts` / `ambiguous-auth.ts` implement the adapter, SDK OAuth discovery/registration with PKCE and a private loopback callback, and durable send receipts. `.local/ambiguous-oauth.json` and `.local/ambiguous-receipts.json` stay private. `AMBIGUOUS_API_KEY` in `.env` is optional; users can sign in from **Connect Ambiguous** instead.
+- `src/extension/ambiguous-worker.ts`, `ambiguous-view.tsx`, `src/shared/ambiguous.ts` own validated snapshots, source identity, draft/review/send commands, factual reports and unknown-delivery handling. No automatic team posts, no retries after ambiguous delivery. Existing Host/Origin/token checks on 4318 remain. Confirmed task text can sync; Ambiguous IDs and snapshots cannot. Local source metadata survives sync edits.
+- New check: `npm run test:ambiguous` uses real isolated Chrome, authenticated HTTP and SDK MCP with an explicit chat contract fixture. Live account OAuth/delivery is **not verified**. Public metadata and API contracts were inspected; no real team message was sent. Setup and limits: [Ambiguous](docs/AMBIGUOUS.md). Restart the local server and reload the extension before connecting; the existing user-owned server was not stopped.
+- Project/task/note editors now send expected timestamps to reject stale saves/deletions, and project selection persists across panel navigation. Preserve these guards alongside concurrent Google/chat changes.
+- Final checks: TypeScript/build, 46 unit/protocol/HTTP tests, five Ambiguous Chrome scenario groups, seven workspace/MCP groups, seven Google/chat groups and native Side Panel smoke passed without paid AI calls. `dist/Tabby.zip` and `dist/tabby-extension.zip` were refreshed and checked against the built extension. No live Ambiguous account connection is implied by these results.
+
+## Google and chat update — 12 September 2026
+
+- Calendar & mail and AI chat are implemented in `src/extension/workspace-panels.tsx` / `.css`; worker commands live in `workspace-worker.ts`. Calendar reads the next 14 days from the primary calendar; Gmail reads the latest 20 inbox previews. Imports retain source links and metadata; AI email extraction remains a draft until saved.
+- `src/server/google.ts` implements desktop OAuth with PKCE, one-use state and a separate ephemeral loopback callback listener. Google routes on 4318 retain exact Host/Origin/pair-token checks. Credentials stay in `.local/`; the extension only receives allowlisted snapshots.
+- New AI kind `chat` keeps DeepSeek as default, supports Russian/English conversation and proposes create-task, complete-task and start-focus cards. Applying a card is explicit, validated, time-limited and protected against replay or changed task identity. Calendar sharing is optional and requires a recent snapshot.
+- Setup: `npm run setup:google -- /path/to/desktop-client.json`, restart the local server, build/reload the extension, then use Calendar & mail. See [Google and chat](docs/GOOGLE_AND_CHAT.md) for scope, privacy and limitations. No Google OAuth client was available during implementation; a live Google account connection is not yet verified.
+- Checks: `npm run test:google-chat` uses real Chrome UI/storage and explicit API fixtures; `tests/google.test.ts` covers actual loopback OAuth handlers against fixture Google endpoints. `node --import tsx scripts/live-chat.ts` is one potentially paid synthetic chat completion, with report `.local/live-chat-report.json`. The live check returned a valid task proposal in Russian from `deepseek-v3.2`.
+
+Update: English is the primary product language. The extension now defaults to English and normalizes saved language settings; existing user content is preserved. Historical notes below may describe the earlier bilingual UI. MCP, projects and Chrome workspace sync are now implemented; see the update below. See the English root README for current installation and ZIP packaging commands.
+
+## Workspace and MCP update — 12 September 2026
+
+- `src/mcp/index.ts` / `broker.ts`: official SDK 1.30.0 stdio server; isolated authenticated loopback bridge on **4319**. Five tools read live sessions/tasks/tabs and create/complete tasks. Separate local MCP token and read/write opt-ins. No model calls or Node-side task database.
+- `src/extension/mcp-bridge.ts`: extension-initiated long polling; serialized worker commands, fresh responses, profile lease, timeout, restart recovery and persisted 24-hour write receipts. Existing AI server stays on **4318**.
+- `src/shared/projects.ts`, `sync.ts`, `analytics.ts`, `src/extension/projects-view.tsx`: projects, linked tasks, archived projects, saved links, notes, Chrome account sync, filtered/daily insights and JSON exports. State remains in `chrome.storage.local`; sync exports a separate allowlist with stable IDs, timestamps and deletion markers. Credentials and session history never sync.
+- New commands: `npm run setup:mcp`, `npm run mcp`, `npm run test:workspace`. Setup preserves `.local/mcp-token.txt` with owner-only permissions. Reload the extension after building because CSP now permits the separate 4319 bridge.
+- Setup and limits: [MCP](docs/MCP.md), [projects and sync](docs/PROJECTS_AND_SYNC.md). The Claude Desktop JSON example is provided; the actual verified client is the official SDK over stdio.
+- Real-browser verification uses a temporary Chrome profile, the production build and real SDK calls: manual task + actual Chrome tab, create/complete/retry, worker termination/restart, access revocation and `chrome.storage.sync` operations. **No paid AI requests.** Cross-machine cloud sync delivery remains unverified. Test results: `artifacts/workspace-test-results.json`.
+- Google/chat work is concurrent and separate. Preserve those changes when editing shared state, task persistence and panel navigation. New task mutation paths should set `updatedAt` and preserve `projectId` and external source metadata.
+
+The historical MCP proposal later in this file describes the starting point, not the current implementation status.
 
 Актуально на 12 сентября 2026. Корень на этом компьютере: `/Users/main/vs_projects/hack`.
 
@@ -17,7 +72,7 @@ Tabby — рабочий прототип Chrome Manifest V3 с боковой �
 
 Пользователь хочет быстро развивать прототип, сохранить название **Tabby / Таби**, оранжевую палитру и предоставленные логотипы. Текущая модель по его выбору — недорогой **DeepSeek 3.2**, точный ID `deepseek-v3.2`, через GPT Tunnel. Это не полная копия функциональности TabAI.
 
-**MCP пока не реализован.** Claude/GPT не подключены к управлению расширением. Gmail, Notion, Slack, аккаунты и облачная синхронизация тоже не реализованы; изображения интеграций на лендинге не означают рабочее подключение.
+**MCP implemented:** live local reads and opt-in task creation/completion; see the update above. Chrome workspace sync is opt-in. External Google/chat and outbound Ambiguous MCP have separate setup and verification; integration artwork does not prove connectivity. Remote hosting of Tabby's MCP, Notion and Slack are not implemented.
 
 ## Что уже работает
 
@@ -97,19 +152,19 @@ npm run demo -- --ready
 | `npm test` | Unit, схемы, provider и HTTP; без платных AI-вызовов |
 | `npm run build` | Проверка TS и сборка в `dist/extension` |
 | `npm run test:smoke` | Проверка собранного интерфейса и настоящей Side Panel в отдельном Chrome |
-| `npm run test:browser` | Chrome API и сценарии с фиктивным AI; нужен свободный порт 4318 |
+| `npm run test:browser` | Chrome APIs with a fixture AI server on an ephemeral port; leaves 4318 running |
 | `npm run models` | Реальный каталог моделей, не completion |
 | `npm run test:live` | Три настоящих, потенциально платных AI-запроса |
 | `npm run dev` / `npm run preview` | Веб-предпросмотр панели; preview использует порт 4180 |
 | `npm run dev:landing` / `npm run build:landing` | Отдельный лендинг, сборка в `dist-landing` |
 
-Для кода расширения/сервера обычно нужны `check`, `test`, `build`, затем подходящая браузерная проверка. Для правки одной документации достаточно проверить факты, пути и diff. Перед `test:browser` освободи 4318 только согласованной остановкой принадлежащего твоей работе процесса; затем восстанови пользовательский сервер. Не убивай все процессы Node/Chrome.
+For extension/server changes, run `check`, `test`, `build`, then the relevant browser checks. Documentation-only changes need factual, path and diff checks. The core browser runner now isolates its backend on an ephemeral port: leave the user's 4318 server running. Never stop unrelated Node or Chrome processes.
 
 Предыдущие результаты: **23 unit/protocol/HTTP теста, 20 браузерных сценариев**, отдельный smoke финального UI. Реальный DeepSeek проверен тремя completions и циклом установленного расширения. Подробности — [docs/TESTING.md](./docs/TESTING.md), локальные отчёты `.local/live-report.json`, `.local/live-browser-report.json`, `artifacts/browser-test-results.json`. Это результаты предыдущих запусков, а не гарантия будущих изменений.
 
-## Следующая задача: MCP для Claude или GPT
+## Historical proposal: MCP for Claude or GPT
 
-Этот раздел — предлагаемое ТЗ, код ещё не написан. Сначала различи запрос пользователя:
+This section preserves the original proposal. The local read/write implementation is now described above and in docs/MCP.md. The client/provider distinctions still apply:
 
 - **Другой агент пишет код через Claude/GPT:** ему достаточно этого файла и доступа к репозиторию; это не требует изменения AI-провайдера Tabby.
 - **Claude/GPT получает задачи и вкладки Tabby через MCP:** нужен новый MCP-сервер и мост к расширению; план ниже.

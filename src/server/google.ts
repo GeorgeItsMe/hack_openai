@@ -16,7 +16,7 @@ type Token = z.infer<typeof tokenSchema>;
 const storeSchema = z.object({ clientId: z.string(), tokens: z.object({ calendar: tokenSchema.optional(), gmail: tokenSchema.optional() }) });
 const tokenResponseSchema = z.object({ access_token: z.string().min(1), refresh_token: z.string().optional(), expires_in: z.number().positive(), scope: z.string().optional() });
 export interface GoogleConfig { clientId: string; clientSecret?: string; tokenFile: string }
-type Pending = { service: GoogleService; state: string; verifier: string; redirect: string; server: Server; timer: ReturnType<typeof setTimeout>; epoch: number };
+type Pending = { service: GoogleService; state: string; verifier: string; redirect: string; server: Server; timer: ReturnType<typeof setTimeout>; epoch: number; processing?: boolean };
 
 export class GoogleIntegration {
   private tokens: Partial<Record<GoogleService, Token>> = {};
@@ -24,6 +24,7 @@ export class GoogleIntegration {
   private pending?: Pending;
   private error?: string;
   private epoch = 0;
+  private authEpoch = 0;
   private writes: Promise<void> = Promise.resolve();
   private refreshes = new Map<GoogleService, Promise<Token>>();
   constructor(private config: GoogleConfig, private fetcher: typeof fetch = fetch) {
@@ -53,6 +54,7 @@ export class GoogleIntegration {
     return { configured: !!this.config.clientId, calendar: !!this.tokens.calendar, gmail: !!this.tokens.gmail, pending: this.pending?.service ?? null, ...(this.error ? { error: this.error } : {}) };
   }
   cancel() {
+    this.authEpoch++;
     if (this.pending) { clearTimeout(this.pending.timer); this.pending.server.close(); this.pending = undefined; }
   }
   async connect(input: unknown) {
@@ -62,7 +64,7 @@ export class GoogleIntegration {
     if (!this.config.clientId) throw new AppError('GOOGLE_NOT_CONFIGURED', 503);
     this.cancel(); this.error = undefined;
     const state = randomBytes(32).toString('base64url'), verifier = randomBytes(48).toString('base64url');
-    const epoch = this.epoch;
+    const epoch = this.epoch, authEpoch = this.authEpoch;
     const server = createServer((req, res) => {
       res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.setHeader('Cache-Control', 'no-store');
       res.setHeader('Referrer-Policy', 'no-referrer'); res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -70,24 +72,24 @@ export class GoogleIntegration {
       const finish = (status: number, message: string) => { res.writeHead(status); res.end(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Tabby · Google</title><body style="font:16px system-ui;background:#f6f5f0;color:#272923;max-width:480px;margin:15vh auto;padding:30px"><span style="color:#ff7745;font-weight:700">TABBY</span><h1>${message}</h1><p>Return to the Tabby side panel. You can close this tab.</p></body></html>`); };
       const pending = this.pending;
       const url = new URL(req.url || '/', 'http://127.0.0.1');
-      if (req.method !== 'GET' || url.pathname !== '/' || !pending || pending.state !== state || req.headers.host !== new URL(pending.redirect).host || url.searchParams.get('state') !== state) { finish(400, 'This connection request is invalid or expired.'); return; }
-      this.cancel();
-      if (url.searchParams.has('error')) { this.error = 'GOOGLE_ACCESS_DENIED'; finish(400, 'Google access was not granted.'); return; }
+      if (req.method !== 'GET' || url.pathname !== '/' || !pending || pending.processing || pending.state !== state || req.headers.host !== new URL(pending.redirect).host || url.searchParams.get('state') !== state) { finish(400, 'This connection request is invalid or expired.'); return; }
+      pending.processing = true;
+      if (url.searchParams.has('error')) { this.cancel(); this.error = 'GOOGLE_ACCESS_DENIED'; finish(400, 'Google access was not granted.'); return; }
       const code = url.searchParams.get('code');
-      if (!code || code.length > 4096) { this.error = 'GOOGLE_AUTH_FAILED'; finish(400, 'Google connection could not finish.'); return; }
+      if (!code || code.length > 4096) { this.cancel(); this.error = 'GOOGLE_AUTH_FAILED'; finish(400, 'Google connection could not finish.'); return; }
       void this.exchange({ code, code_verifier: verifier, redirect_uri: pending.redirect, grant_type: 'authorization_code' })
         .then(async response => {
-          if (epoch !== this.epoch) throw new AppError('GOOGLE_AUTH_EXPIRED', 409);
+          if (epoch !== this.epoch || authEpoch !== this.authEpoch) throw new AppError('GOOGLE_AUTH_EXPIRED', 409);
           const scope = response.scope ?? scopes[pending.service];
           if (!scope.split(' ').includes(scopes[pending.service])) throw new AppError('GOOGLE_SCOPE_REQUIRED', 403);
           if (!response.refresh_token) throw new AppError('GOOGLE_AUTH_FAILED', 502);
           this.tokens[pending.service] = { access_token: response.access_token, refresh_token: response.refresh_token, expiresAt: Date.now() + response.expires_in * 1000, scope };
-          await this.persist(); this.error = undefined; finish(200, 'Google is connected.');
-        }).catch((e: unknown) => { this.error = e instanceof AppError ? e.code : 'GOOGLE_AUTH_FAILED'; finish(400, 'Google connection could not finish. Please try again in Tabby.'); });
+          await this.persist(); if (this.pending === pending) { this.cancel(); this.error = undefined; } finish(200, 'Google is connected.');
+        }).catch((e: unknown) => { if (this.pending === pending) { this.cancel(); this.error = e instanceof AppError ? e.code : 'GOOGLE_AUTH_FAILED'; } finish(400, 'Google connection could not finish. Please try again in Tabby.'); });
     });
     server.requestTimeout = 30000; server.headersTimeout = 10000;
     await new Promise<void>((resolve, reject) => { server.once('error', () => reject(new AppError('GOOGLE_AUTH_FAILED', 503))); server.listen(0, '127.0.0.1', resolve); });
-    if (epoch !== this.epoch) { server.close(); throw new AppError('GOOGLE_AUTH_EXPIRED', 409); }
+    if (epoch !== this.epoch || authEpoch !== this.authEpoch) { server.close(); throw new AppError('GOOGLE_AUTH_EXPIRED', 409); }
     const address = server.address(); if (!address || typeof address === 'string') throw new AppError('GOOGLE_AUTH_FAILED');
     const redirect = `http://127.0.0.1:${address.port}/`;
     const timer = setTimeout(() => { if (this.pending?.state === state) { this.cancel(); this.error = 'GOOGLE_AUTH_EXPIRED'; } }, 300000); timer.unref();
@@ -140,7 +142,10 @@ export class GoogleIntegration {
     const token = await this.access(service);
     try { return await this.json(url, { headers: { Authorization: `Bearer ${token.access_token}` }, signal }); }
     catch (e) {
-      if (e instanceof AppError && e.code === 'GOOGLE_RECONNECT' && this.tokens[service] === token) { token.expiresAt = 0; await this.persist(); }
+      if (e instanceof AppError && e.code === 'GOOGLE_RECONNECT' && this.tokens[service] === token) {
+        token.expiresAt = 0; await this.persist(); const refreshed = await this.access(service);
+        return this.json(url, { headers: { Authorization: `Bearer ${refreshed.access_token}` }, signal });
+      }
       throw e;
     }
   }

@@ -1,15 +1,32 @@
-import { initialState, normalizeLanguage, type AppState, type PageContext, type Assessment, type Usage, type Task } from '../shared/types';
+import { ambiguousCommands } from './ambiguous-worker';
+import { initialState, normalizeLanguage, type AppState, type PageContext, type Assessment, type Usage } from '../shared/types';
+import { projectCommand, requireProject, saveTask } from '../shared/projects';
+import { createMcpBridge } from './mcp-bridge';
+import { exportTask, mcpInputs, mcpOutputs, type McpRequest } from '../shared/mcp';
+import { canonical, checkSyncQuota, mergeSync, syncRecords, SYNC_PREFIX } from '../shared/sync';
 import { createSession, settle, transition, event, cacheKey, requestCurrent } from '../shared/engine';
 import { cleanUrl, contextKey, excluded, redact } from '../shared/privacy';
 import { assessmentSchema, groupSchema, nextSchema, summarySchema, taskSchema, type AIRequest } from '../shared/schemas';
+import { workspaceCommands } from './workspace-worker';
+import { googleLink } from '../shared/workspace';
 
 let state: AppState; let queue: Promise<unknown> = Promise.resolve(); let timer: ReturnType<typeof setTimeout> | undefined;
 let generation = 0; let controller: AbortController | undefined;
 const cache = new Map<string, Assessment>(); const pendingRequests = new Set<AbortController>();
+const workspace = workspaceCommands({ state: () => state, serial, save, api, addUsage, changed: async () => {
+  invalidate(); state.pendingAt = undefined; await stopScripts();
+  if (state.session?.phase === 'running') state.session.away = await chrome.idle.queryState(60) !== 'active' || !(await chrome.windows.getLastFocused()).focused;
+  await alarms(); void observe(true);
+} });
+const ambiguous = ambiguousCommands({ state: () => state, serial, save, api });
 const ready = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }).then(async () => {
   const stored = (await chrome.storage.local.get('app')).app as AppState | undefined;
   state = stored?.version === 1 ? stored : initialState();
   normalizeLanguage(state);
+  // A restored worker has no in-flight classification request to display.
+  state.pendingAt = undefined;
+  if (state.ai.code === 'ANALYZING') state.ai.code = state.ai.connected ? 'READY' : 'AI_NOT_CONNECTED';
+  workspace.resetPending();
   if (state.session && state.session.phase !== 'finished') {
     const s = state.session;
     // After an unobserved long sleep, do not attribute the gap to a website.
@@ -26,7 +43,13 @@ function serial<T>(fn: () => Promise<T> | T): Promise<T> {
   const next = queue.then(() => ready).then(fn); queue = next.catch(() => {}); return next;
 }
 async function save() { await chrome.storage.local.set({ app: state }); }
-function invalidate() { generation++; controller?.abort(); controller = undefined; clearTimeout(timer); }
+function invalidate() {
+  generation++; controller?.abort(); controller = undefined; clearTimeout(timer);
+  if (state) {
+    state.pendingAt = undefined;
+    if (state.ai.code === 'ANALYZING') state.ai.code = state.ai.connected ? 'READY' : 'AI_NOT_CONNECTED';
+  }
+}
 async function stopScripts() {
   const tabs = await chrome.tabs.query({});
   await Promise.allSettled(tabs.filter(t => t.id !== undefined).map(t => chrome.tabs.sendMessage(t.id!, { type: 'STOP_OBSERVING' })));
@@ -160,12 +183,15 @@ async function runAI(kind: AIRequest['kind']) {
       context.tasks = state.tasks.filter(t => t.status !== 'done').slice(0, 100).map(t => t.title);
     }
     if (kind === 'task') {
-      const tab = await activeTab(); if (!tab?.id || tab.incognito || !permitted(tab.url || '')) throw new Error('PAGE_UNAVAILABLE');
-      const page = await readPage(tab, state.settings.readText);
-      context.page = { title: page.title, url: page.url, text: page.text, seconds: 0 };
-      if (state.taskDraft?.selectedText) { context.selection = state.taskDraft.selectedText; context.page = { title: '', url: state.taskDraft.source, seconds: 0 }; }
+      if (state.taskDraft?.selectedText) {
+        if (!permitted(state.taskDraft.source)) throw new Error('PAGE_UNAVAILABLE');
+        context.selection = state.taskDraft.selectedText; context.page = { title: '', url: state.taskDraft.source, seconds: 0 };
+      } else {
+        const tab = await activeTab(); if (!tab?.id || tab.incognito || !permitted(tab.url || '')) throw new Error('PAGE_UNAVAILABLE');
+        const page = await readPage(tab, state.settings.readText); context.page = { title: page.title, url: page.url, text: page.text, seconds: 0 };
+      }
     }
-    return { context, sessionId: s?.id, revision: s?.revision, pageKey: state.page?.key, generation, groupSnapshot, source: kind === 'task' ? (context.page?.url ?? '') : '' };
+    return { context, sessionId: s?.id, revision: s?.revision, pageKey: state.page?.key, generation, groupSnapshot, source: kind === 'task' ? (context.page?.url ?? '') : '', external: kind === 'task' ? state.taskDraft?.external : undefined, draft: state.taskDraft, ambiguous: kind === 'task' ? state.taskDraft?.ambiguous : undefined };
   });
   try {
     const data = await api('ai', { kind, context: snapshot.context });
@@ -173,7 +199,10 @@ async function runAI(kind: AIRequest['kind']) {
       addUsage(data.usage);
       if (!state.settings.consent || (['next', 'summary'].includes(kind) && (snapshot.sessionId !== state.session?.id || snapshot.revision !== state.session?.revision)) || (kind === 'next' && snapshot.pageKey !== state.page?.key)) { await save(); throw new Error('STALE_RESPONSE'); }
       state.ai = { connected: true, code: 'READY', model: data.model, at: Date.now() };
-      if (kind === 'task') { const task = taskSchema.parse(data.result); state.taskDraft = { title: task.title, steps: task.steps, due: task.due, source: snapshot.source }; }
+      if (kind === 'task') {
+        if (snapshot.draft !== state.taskDraft || !permitted(snapshot.source)) throw new Error('STALE_RESPONSE');
+        const task = taskSchema.parse(data.result); state.taskDraft = { title: task.title, steps: task.steps, due: task.due, source: snapshot.source, ...(snapshot.external ? { external: snapshot.external } : {}), ...(snapshot.ambiguous ? { ambiguous: snapshot.ambiguous } : {}) };
+      }
       if (kind === 'groups') { state.groupDraft = groupSchema.parse(data.result).groups; state.groupSnapshot = snapshot.groupSnapshot; }
       if (kind === 'next') { const n = nextSchema.parse(data.result); if (state.assessment) state.assessment.nextStep = n.nextStep; else if (state.page) state.assessment = { category: 'unknown', reason: '', nextStep: n.nextStep, source: 'ai', at: Date.now(), key: state.page.key }; }
       if (kind === 'summary') state.session!.summary = summarySchema.parse(data.result);
@@ -182,6 +211,8 @@ async function runAI(kind: AIRequest['kind']) {
   } catch (e) { if ((e as Error).message !== 'STALE_RESPONSE') await serial(() => failure(e)); throw e; }
 }
 async function command(message: any) {
+  if (typeof message.type === 'string' && message.type.startsWith('AMBIGUOUS_')) return ambiguous.handle(message);
+  if (typeof message.type === 'string' && (message.type.startsWith('GOOGLE_') || message.type.startsWith('CHAT_'))) { const result = await workspace.handle(message); scheduleSync(); return result; }
   if (message.type === 'AI') return runAI(message.kind);
   if (message.type === 'CONNECT') {
     try { const data = await api('status', {}); await serial(async () => { state.ai = { ...data, at: Date.now() }; await save(); }); void observe(true); return data; }
@@ -195,12 +226,19 @@ async function command(message: any) {
         if (s && s.phase !== 'finished') throw new Error('SESSION_ALREADY_RUNNING');
         if (s) state.history = [s, ...state.history].slice(0, 100);
         state.session = createSession(String(message.goal || ''), String(message.taskId || ''), Number(message.minutes));
+        state.session.ambiguous = state.tasks.find(t => t.id === state.session!.taskId)?.ambiguous;
+        state.session.projectId = state.tasks.find(t => t.id === state.session!.taskId)?.projectId;
         state.session.away = await chrome.idle.queryState(60) !== 'active' || !(await chrome.windows.getLastFocused()).focused;
         state.page = null; state.assessment = null; cache.clear(); break;
       case 'GOAL':
-        if (s && s.phase !== 'finished' && typeof message.goal === 'string' && message.goal.trim() && message.goal.length <= 1000) { s.goal = message.goal.trim(); s.taskId = String(message.taskId || ''); s.revision++; s.category = 'unknown'; s.corrections = {}; s.workTabs = []; s.lastConfirmedStep = ''; state.assessment = null; event(s, 'goal-changed'); } break;
+        if (s && s.phase !== 'finished' && typeof message.goal === 'string' && message.goal.trim() && message.goal.length <= 1000) { s.goal = message.goal.trim(); s.taskId = String(message.taskId || ''); s.projectId = state.tasks.find(t => t.id === s.taskId)?.projectId; s.ambiguous = state.tasks.find(t => t.id === s.taskId)?.ambiguous; s.revision++; s.category = 'unknown'; s.corrections = {}; s.workTabs = []; s.lastConfirmedStep = ''; state.assessment = null; event(s, 'goal-changed'); } break;
       case 'PAUSE': if (s) transition(s, 'paused'); break;
-      case 'RESUME': if (s) transition(s, 'running'); break;
+      case 'RESUME':
+        if (s) {
+          transition(s, 'running');
+          s.away = await chrome.idle.queryState(60) !== 'active' || !(await chrome.windows.getLastFocused()).focused;
+        }
+        break;
       case 'BREAK': if (s) transition(s, 'break', Date.now(), Number(message.minutes) || state.settings.breakMinutes); break;
       case 'STOP': if (s) transition(s, 'finished'); break;
       case 'CORRECT':
@@ -211,15 +249,20 @@ async function command(message: any) {
       case 'RETURN': await returnToWork(); break;
       case 'CONFIRM_STEP': if (s) { s.lastConfirmedStep = String(message.step || '').slice(0, 600); event(s, 'confirmed-step', s.lastConfirmedStep); } break;
       case 'SETTINGS': {
+        workspace.invalidate();
         const x = message.settings || {};
         state.settings.language = 'en';
         if (['soft', 'strict'].includes(x.mode)) state.settings.mode = x.mode;
         for (const key of ['consent', 'readText'] as const) if (typeof x[key] === 'boolean') state.settings[key] = x[key];
         if (Array.isArray(x.excludedSites)) {
+          ambiguous.invalidate();
           state.settings.excludedSites = x.excludedSites.filter((v: unknown) => typeof v === 'string' && /^[a-z0-9.-]+$/i.test(v)).slice(0, 100);
           if (s) { s.workTabs = s.workTabs.filter(tab => !excluded(tab.url, state.settings.excludedSites)); s.events = s.events.filter(e => !['page', 'reminder', 'correction'].includes(e.type)); }
           if (state.taskDraft && excluded(state.taskDraft.source, state.settings.excludedSites)) state.taskDraft = undefined;
           state.groupDraft = undefined;
+          state.chat.messages = [];
+          state.google.events = excluded('https://calendar.google.com', state.settings.excludedSites) ? [] : state.google.events.filter(e => !excluded(e.url, state.settings.excludedSites));
+          state.google.messages = state.google.messages.filter(e => !excluded(e.url, state.settings.excludedSites));
         }
         if (typeof x.pairToken === 'string' && x.pairToken.length <= 256) state.settings.pairToken = x.pairToken.trim();
         if (Number.isFinite(x.breakMinutes)) state.settings.breakMinutes = Math.max(1, Math.min(120, x.breakMinutes));
@@ -228,13 +271,55 @@ async function command(message: any) {
         if (!state.settings.consent) state.ai.code = 'CONSENT_REQUIRED'; break;
       }
       case 'SAVE_TASK': {
-        const t = message.task; if (!t || typeof t.title !== 'string' || !t.title.trim() || t.title.length > 180 || !['planned', 'doing', 'done'].includes(t.status) || !Array.isArray(t.steps)) throw new Error('INVALID_TASK');
-        const old = state.tasks.find(x => x.id === t.id);
-        const task: Task = { id: old?.id || crypto.randomUUID(), title: t.title.trim(), steps: t.steps.filter((x: unknown) => typeof x === 'string').slice(0, 8).map((x: string) => x.slice(0, 600)), source: cleanUrl(t.source || ''), due: /^\d{4}-\d{2}-\d{2}$/.test(t.due) ? t.due : '', status: t.status, createdAt: old?.createdAt || Date.now(), ...(t.status === 'done' ? { completedAt: old?.completedAt || Date.now() } : {}) };
-        state.tasks = [task, ...state.tasks.filter(x => x.id !== task.id)].slice(0, 500); state.taskDraft = undefined;
-        if (s && task.status === 'done' && old?.status !== 'done') event(s, 'task-completed', task.title);
-        if (s?.taskId === task.id) { s.revision++; s.category = 'unknown'; s.corrections = {}; s.workTabs = []; state.assessment = null; }
+        const old = state.tasks.find(x => x.id === message.task?.id);
+        const external = old?.external || (message.task?.source === state.taskDraft?.source ? state.taskDraft?.external : undefined);
+        const draftSource = state.taskDraft?.ambiguous;
+        if (!old && message.task?.ambiguous && (!draftSource || message.task.ambiguous.messageId !== draftSource.messageId || message.task.ambiguous.channelId !== draftSource.channelId || message.task.ambiguous.threadId !== draftSource.threadId)) throw new Error('STALE_RESPONSE');
+        const source = old?.ambiguous || (!old && message.task?.ambiguous ? draftSource : undefined);
+        if (!old && source && state.tasks.some(t => t.ambiguous?.channelId === source.channelId && t.ambiguous.messageId === source.messageId)) throw new Error('AMBIGUOUS_ALREADY_IMPORTED');
+        const task = saveTask(state, message.task, Date.now(), message.expectedUpdatedAt);
+        if (source) task.ambiguous = source;
+        if (external) { task.external = external; task.source = googleLink(String(message.task.source || ''), external.service); }
+        taskChanged(task.id, old?.status);
         break;
+      }
+      case 'SAVE_PROJECT': case 'SAVE_NOTE': case 'DELETE_NOTE': case 'UNPIN_TAB':
+        projectCommand(state, message.type, message); break;
+      case 'PIN_TAB': {
+        const projectId = String(message.projectId || ''); if (!projectId) throw new Error('PROJECT_UNAVAILABLE'); requireProject(state, projectId);
+        if (!Number.isInteger(message.tabId)) throw new Error('PAGE_UNAVAILABLE');
+        const tab = await chrome.tabs.get(message.tabId);
+        if (tab.incognito || !permitted(tab.url || '')) throw new Error('PAGE_UNAVAILABLE');
+        const url = cleanUrl(tab.url || '');
+        if (state.pinnedTabs.some(t => !t.deletedAt && t.projectId === projectId && t.url === url)) break;
+        if (state.pinnedTabs.length >= 500) throw new Error('PIN_LIMIT');
+        state.pinnedTabs.unshift({ id: crypto.randomUUID(), projectId, title: redact(tab.title || url, 300), url, createdAt: Date.now(), updatedAt: Date.now() }); break;
+      }
+      case 'OPEN_PIN': {
+        const pin = state.pinnedTabs.find(t => t.id === message.id && !t.deletedAt);
+        if (!pin || !permitted(pin.url)) throw new Error('PAGE_UNAVAILABLE');
+        const existing = (await chrome.tabs.query({})).find(t => !t.incognito && cleanUrl(t.url || '') === pin.url);
+        if (existing?.id) { await chrome.windows.update(existing.windowId, { focused: true }); await chrome.tabs.update(existing.id, { active: true }); }
+        else await chrome.tabs.create({ url: pin.url }); break;
+      }
+      case 'MCP_SETTINGS': {
+        const x = message.settings || {};
+        if (typeof x.mcpToken === 'string' && x.mcpToken.length <= 256) state.settings.mcpToken = x.mcpToken.trim();
+        if (typeof x.mcpEnabled === 'boolean') state.settings.mcpEnabled = x.mcpEnabled;
+        if (typeof x.mcpWriteEnabled === 'boolean') state.settings.mcpWriteEnabled = x.mcpWriteEnabled;
+        if (!state.settings.mcpEnabled) state.settings.mcpWriteEnabled = false;
+        if (state.settings.mcpEnabled && state.settings.mcpToken.length < 32) { state.settings.mcpEnabled = false; state.settings.mcpWriteEnabled = false; throw new Error('MCP_TOKEN_REQUIRED'); }
+        break;
+      }
+      case 'SYNC_SETTINGS':
+        if (typeof message.enabled !== 'boolean') throw new Error('INVALID_REQUEST');
+        state.settings.syncEnabled = message.enabled; state.sync.code = message.enabled ? 'SYNC_PENDING' : 'SYNC_OFF'; break;
+      case 'SYNC_NOW': if (!state.settings.syncEnabled) throw new Error('SYNC_OFF'); break;
+      case 'SYNC_CLEAR': {
+        if (message.confirm !== true) throw new Error('CONFIRM_REQUIRED');
+        state.settings.syncEnabled = false; state.sync = { code: 'SYNC_OFF' }; await save();
+        const keys = Object.keys(await chrome.storage.sync.get(null)).filter(k => k.startsWith(SYNC_PREFIX));
+        if (keys.length) await chrome.storage.sync.remove(keys); break;
       }
       case 'CLEAR_DRAFT': state.taskDraft = undefined; break;
       case 'LIST_TABS': return (await chrome.tabs.query({ currentWindow: true })).map(t => ({ id: t.id, title: t.title, url: t.url, active: t.active, pinned: t.pinned, groupId: t.groupId }));
@@ -257,12 +342,15 @@ async function command(message: any) {
         state.groupDraft = undefined; state.groupSnapshot = undefined; break;
       }
       case 'CLEAR_DATA':
+        ambiguous.invalidate(); workspace.invalidate();
         invalidate(); for (const request of pendingRequests) request.abort(); await stopScripts(); state = initialState(); cache.clear(); break;
       default: throw new Error('UNKNOWN_COMMAND');
     }
     if (['START', 'GOAL', 'PAUSE', 'RESUME', 'BREAK', 'STOP', 'SETTINGS', 'SAVE_TASK'].includes(message.type)) { invalidate(); state.pendingAt = undefined; await stopScripts(); }
     await alarms(); await save(); return state;
   });
+  if (['MCP_SETTINGS', 'CLEAR_DATA'].includes(message.type)) mcpBridge.configure(state.settings.mcpEnabled, state.settings.mcpToken);
+  if (['SAVE_TASK', 'SAVE_PROJECT', 'SAVE_NOTE', 'DELETE_NOTE', 'PIN_TAB', 'UNPIN_TAB', 'SYNC_SETTINGS', 'SYNC_NOW'].includes(message.type)) scheduleSync();
   if (['START', 'GOAL', 'RESUME', 'SETTINGS', 'SAVE_TASK'].includes(message.type)) void observe(true);
   return result;
 }
@@ -288,6 +376,8 @@ chrome.idle.onStateChanged.addListener(presence);
 chrome.windows.onFocusChanged.addListener(presence);
 chrome.permissions.onRemoved.addListener(() => { invalidate(); void serial(async () => { if (state.session) state.session.revision++; state.page = null; state.assessment = null; await stopScripts(); await save(); }).then(() => observe(true)); });
 chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name === 'mcp-reconnect') { void mcpBridge.wake(); return; }
+  if (alarm.name === 'workspace-sync') { scheduleSync(); return; }
   if (alarm.name === 'evaluate') { void evaluate(); return; }
   void serial(async () => { if (state.session) settle(state.session); if (!observing()) { invalidate(); state.pendingAt = undefined; await stopScripts(); } await alarms(); await save(); }).then(async () => {
     // A short strict overlay lease requires fresh connectivity, never an indefinite block.
@@ -306,4 +396,84 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   });
 });
 chrome.runtime.onStartup.addListener(() => { void serial(async () => { if (state.session && state.session.phase !== 'finished') { state.session.away = true; settle(state.session); transition(state.session, 'paused'); event(state.session, 'browser-restored'); await save(); } }); });
-void ready.then(() => observe(true));
+void ready.then(() => { mcpBridge.configure(state.settings.mcpEnabled, state.settings.mcpToken); scheduleSync(); return observe(true); });
+
+function taskChanged(id: string, previousStatus?: string) {
+  const task = state.tasks.find(t => t.id === id)!; const s = state.session;
+  if (s && task.status === 'done' && previousStatus !== 'done') event(s, 'task-completed', task.title);
+  if (s?.taskId === id) { s.revision++; s.category = 'unknown'; s.corrections = {}; s.workTabs = []; state.assessment = null; state.pendingAt = undefined; invalidate(); }
+}
+const mcpBridge = createMcpBridge(async (request: McpRequest) => serial(async () => {
+  if (!state.settings.mcpEnabled) throw new Error('MCP_DISABLED');
+  if (request.expiresAt <= Date.now()) throw new Error('STALE_REQUEST');
+  const parsed = mcpInputs[request.tool].safeParse(request.args); if (!parsed.success) throw new Error('INVALID_ARGUMENTS');
+  const args = parsed.data;
+  const capturedAt = Date.now(); let result: unknown;
+  if (request.tool === 'tabby_get_session') {
+    const s = state.session ? settle(structuredClone(state.session)) : null;
+    result = { capturedAt, session: s ? { id: s.id, goal: redact(s.goal, 1000), taskId: s.taskId, projectId: s.projectId, phase: s.phase, remainingMs: s.remainingMs, durationMs: s.durationMs, startedAt: s.startedAt, away: s.away } : null };
+  } else if (request.tool === 'tabby_list_tasks') {
+    const filters = mcpInputs.tabby_list_tasks.parse(args);
+    result = { capturedAt, tasks: state.tasks.filter(t => (!t.source || !excluded(t.source, state.settings.excludedSites)) && (!filters.status || t.status === filters.status) && (!filters.projectId || t.projectId === filters.projectId)).map(t => exportTask(t, state)) };
+  } else if (request.tool === 'tabby_list_tabs') {
+    const tabs = (await chrome.tabs.query({})).filter(t => t.id !== undefined && !t.incognito && permitted(t.url || ''));
+    result = { capturedAt, tabs: tabs.slice(0, 500).map(t => ({ id: t.id!, windowId: t.windowId, title: redact(t.title || '', 300), url: cleanUrl(t.url || ''), active: t.active, pinned: t.pinned })), truncated: tabs.length > 500 };
+  } else {
+    if (!state.settings.mcpWriteEnabled) throw new Error('MCP_WRITE_DISABLED');
+    const requestId = (args as { requestId: string }).requestId;
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical({ tool: request.tool, args })));
+    const fingerprint = Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
+    const receipt = state.mcpReceipts.find(r => r.requestId === requestId && r.at > capturedAt - 86400000);
+    if (receipt && receipt.fingerprint !== fingerprint) throw new Error('IDEMPOTENCY_CONFLICT');
+    if (receipt) {
+      const task = state.tasks.find(t => t.id === receipt.taskId); if (!task || (task.source && excluded(task.source, state.settings.excludedSites))) throw new Error('TASK_NOT_FOUND');
+      result = { capturedAt, task: exportTask(task, state), replayed: true };
+    } else {
+      if (state.mcpReceipts.filter(r => r.at > capturedAt - 86400000).length >= 1000) throw new Error('MCP_WRITE_LIMIT');
+      if (request.expiresAt <= Date.now()) throw new Error('STALE_REQUEST');
+      const previous = structuredClone(state);
+      try {
+        let task;
+        if (request.tool === 'tabby_create_task') {
+          const input = mcpInputs.tabby_create_task.parse(args);
+          task = saveTask(state, { title: input.title, steps: input.steps, due: input.due, projectId: input.projectId, status: 'planned', source: '' });
+        } else {
+          const input = mcpInputs.tabby_complete_task.parse(args); const old = state.tasks.find(t => t.id === input.taskId);
+          if (!old || (old.source && excluded(old.source, state.settings.excludedSites))) throw new Error('TASK_NOT_FOUND');
+          task = old.status === 'done' ? old : saveTask(state, { ...old, status: 'done' }); taskChanged(task.id, old.status); if (state.session?.taskId === task.id) await stopScripts();
+        }
+        state.mcpReceipts = [...state.mcpReceipts.filter(r => r.at > capturedAt - 86400000), { requestId, fingerprint, taskId: task.id, at: capturedAt }];
+        await save(); scheduleSync(); result = { capturedAt, task: exportTask(task, state), replayed: false };
+      } catch (e) { state = previous; throw e; }
+    }
+  }
+  return mcpOutputs[request.tool].parse(result);
+}));
+let syncTimer: ReturnType<typeof setTimeout> | undefined;
+function scheduleSync() {
+  clearTimeout(syncTimer);
+  if (!state.settings.syncEnabled) { void chrome.alarms.clear('workspace-sync'); return; }
+  void chrome.alarms.create('workspace-sync', { periodInMinutes: 5 });
+  syncTimer = setTimeout(() => { void serial(syncWorkspace); }, 1500);
+}
+async function syncWorkspace() {
+  if (!state.settings.syncEnabled) return;
+  try {
+    const remote = await chrome.storage.sync.get(null); const merged = structuredClone(state);
+    const changed = mergeSync(merged, remote); const records = syncRecords(merged); checkSyncQuota(records);
+    const updates = Object.fromEntries(Object.entries(records).filter(([key, value]) => canonical(value) !== canonical(remote[key])));
+    // Persist merged state before publishing, preserving local data on quota/network failure.
+    if (changed) {
+      const currentTaskId = state.session?.taskId; const taskWas = state.tasks.find(t => t.id === currentTaskId); state = merged;
+      if (currentTaskId && canonical(taskWas) !== canonical(state.tasks.find(t => t.id === currentTaskId))) { taskChanged(currentTaskId, taskWas?.status); await stopScripts(); }
+      await save();
+    }
+    if (Object.keys(updates).length) await chrome.storage.sync.set(updates);
+    state.sync = { code: 'SYNC_READY', at: Date.now() };
+  } catch (e) {
+    const code = e instanceof Error ? e.message : '';
+    state.sync.code = /^SYNC_[A-Z_]+$/.test(code) ? code : /quota|max.*write/i.test(code) ? 'SYNC_QUOTA_EXCEEDED' : 'SYNC_UNAVAILABLE';
+  }
+  await save();
+}
+chrome.storage.onChanged.addListener((changes, area) => { if (area === 'sync' && Object.keys(changes).some(k => k.startsWith(SYNC_PREFIX))) void ready.then(scheduleSync); });

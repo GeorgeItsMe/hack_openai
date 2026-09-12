@@ -1,0 +1,9 @@
+[
+  {"id":"intro","text":"Meet Tabby, your focus companion in Chrome. Let's build a React login form."},
+  {"id":"goal","text":"Set one clear goal, then start a focus session. Tabby checks whether the page supports what you're trying to do."},
+  {"id":"aligned","text":"Here, the React documentation is on track. Tabby explains why, and suggests a useful next step."},
+  {"id":"distraction","text":"A cat video? That's a detour. Tabby gives you a gentle nudge. Click Back to work, and you're right where you left off."},
+  {"id":"task","text":"Turn this page into a task. Review the AI generated steps, keep the source link, and save it for later."},
+  {"id":"tabs","text":"Now, organize your tabs. Review the suggested groups, then confirm. Tabby creates the groups directly in Chrome."},
+  {"id":"ending","text":"One goal. A clear next step. A calmer browser. That's Tabby."}
+]

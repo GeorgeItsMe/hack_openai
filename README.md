@@ -4,11 +4,15 @@
 
 <h1 align="center">Less chaos. More focus.</h1>
 <p align="center">A context-aware Chrome extension for tasks, focus sessions, and a calmer browser.<br><strong>Built as a working hackathon prototype.</strong></p>
-<p align="center"><a href="#extension-and-local-server">Try the extension</a> · <a href="#what-works">Features</a> · <a href="#development">Development</a></p>
+<p align="center"><a href="https://tabby-pi.vercel.app/">Try Tabby</a> · <a href="docs/INSTALLATION.md">Install the extension</a> · <a href="#what-works">Features</a> · <a href="#development">Development</a></p>
 
-[![Watch the 15-second Tabby walkthrough](public/demo/tabby-focus-poster.jpg)](public/demo/tabby-focus-demo.mp4)
+**[Download Tabby.zip](https://tabby-pi.vercel.app/downloads/Tabby.zip)** — ready to install in Chrome. Unzip it, enable Developer mode, then choose Load unpacked and select the Tabby folder. [Three-step guide](docs/INSTALLATION.md). AI and connected tools have separate optional setup below.
 
-**[Watch the 15-second demo →](public/demo/tabby-focus-demo.mp4)** A React task, a distracting tab, and one click back to work. This is an illustrated walkthrough using actual Tabby UI assets; the sequence is condensed for the video.
+**Tabby × Ambiguous:** our Ambiguous workspace brings together the product brief, architecture decisions, delivery tasks and release evidence. We also built an Ambiguous MCP integration into the extension. [Open the workspace references](docs/AMBIGUOUS_WORKSPACE.md) · [See the demo walkthrough](docs/AMBIGUOUS_DEMO.md).
+
+[![Watch Tabby in a real browser](public/demo/tabby-browser-poster.jpg)](public/demo/tabby-browser-demo.mp4)
+
+**[Watch the one-minute browser demo →](public/demo/tabby-browser-demo.mp4)** Actual Chrome and DeepSeek responses, edited with condensed timing: focus, distraction, return, task capture and tab groups. [Capture and editing notes](scripts/video/BROWSER-DEMO.md). The [earlier 15-second illustrated walkthrough](public/demo/tabby-focus-demo.mp4) remains available.
 
 ## Why we built Tabby
 
@@ -28,6 +32,12 @@ Tabby keeps that goal close. Start a focus session, let the extension assess the
 | Real browser tabs | Search and switch tabs, review AI grouping suggestions, and create actual Chrome tab groups. |
 | Duplicate cleanup | Choose exact duplicate tabs to close while keeping another copy. |
 | Session insights | Review observed time, breaks, time away, reminders, returns, and confirmed task completions. |
+| Projects and notes | Organize tasks, notes and saved links; archive projects and filter/export reports. |
+| Local MCP | Five tools read sessions/tasks/tabs and create or complete tasks with separate permission. |
+| AI chat | Plan work and confirm proposed task or focus actions. |
+| Google connectors | Read selected Calendar/Gmail data and import tasks; developer OAuth setup is required. |
+| Ambiguous | Review chat messages as tasks and explicitly send session reports; live account delivery remains unverified. |
+| Chrome workspace sync | Opt in to sharing projects, tasks, notes and saved links; delivery between computers remains unverified. |
 
 The extension uses **DeepSeek 3.2 through GPT Tunnel**. AI requires a configured local server; manual tasks and timers work without a model connection. English is the primary product language.
 
@@ -85,15 +95,20 @@ Use `npm run demo -- --ready` to open the prepared pages without running the aut
 
 ### Sharing the prototype
 
-For hackathon judges and early testers, package the built extension as a **GitHub Release asset**:
+The ready-to-install [Tabby.zip](https://tabby-pi.vercel.app/downloads/Tabby.zip) is served by the landing. It contains only the browser extension and a short installation guide. Users extract it and choose **Load unpacked** on the Tabby folder containing `manifest.json`.
+
+To refresh the public download from the current source:
 
 ```sh
-npm run package:extension
+npm run build
+node scripts/package-extension.mjs --landing
+node scripts/verify-download.mjs
+node --import tsx tests/package-browser.ts
 ```
 
-The command produces **`dist/tabby-extension.zip`** with the manifest, browser bundles, and icons. Attach this ZIP to a versioned GitHub Release alongside the source link and these setup instructions. Testers extract it and use **Load unpacked** on the extracted folder containing `manifest.json`.
+Commit the updated ZIP and its metadata alongside the matching source. `npm run package:extension` also produces local `dist/Tabby.zip` and the legacy `dist/tabby-extension.zip`. [Packaging and release details](docs/INSTALLATION.md).
 
-The local AI server still needs to run on the tester's computer with their own API key. A ZIP alone does not provide the server or an AI account. Provider credentials and pairing tokens are excluded from the archive. The prototype is currently installed through Developer mode; there is no published Chrome Web Store listing yet.
+The local AI server still needs the user's own API key; the browser ZIP does not include that server or account credentials. This is a manual-install preview, with no Chrome Web Store listing yet.
 
 ## How it works
 
@@ -130,16 +145,19 @@ The prototype does not transcribe video or audio. Time on a page is an observati
 | `npm run package:extension` | Build and package the extension ZIP. |
 | `npm test` | Run unit, protocol, and HTTP tests without live AI calls. |
 | `npm run test:smoke` | Check the built UI and native Chrome side panel. |
-| `npm run test:browser` | Exercise Chrome APIs with an explicitly simulated AI adapter; port 4318 must be free. |
+| `npm run test:browser` | Exercise Chrome APIs with an explicitly simulated AI adapter on an ephemeral backend port; the user's AI server stays running. |
 | `npm run test:live` | Run three real, potentially billable model requests. |
 | `npm run models` | Check the model catalog available to your key. |
 
-The project has passed 23 unit/protocol/HTTP tests, 20 browser scenarios, and a separate UI smoke check. Earlier live checks verified DeepSeek responses and the focus → distraction → return flow. Simulated browser responses are not evidence of live model quality. Detailed run history is in [the testing notes](docs/TESTING.md).
+The current source passes 48 unit/protocol tests. Browser suites cover core focus/tab behavior, workspace/MCP, Google/chat and Ambiguous, with separate native Side Panel and packaged-download checks. External-service fixtures are not live account verification. [Run history and limits](docs/TESTING.md).
+
+GitHub Actions runs the extension build, unit tests, source-to-ZIP comparison and landing build for pushes and pull requests. A stale browser download fails verification rather than silently shipping a different build.
 
 ```text
 src/extension/       Side panel, worker, content script, manifest
 src/shared/          Types, time accounting, privacy, AI schemas
 src/server/          Local HTTP server and model adapter
+src/mcp/             Local stdio MCP server and authenticated browser bridge
 src/App.tsx          Landing page
 src/Workspace.tsx    Interactive website preview
 public/brand/        Tabby logos and artwork
@@ -148,8 +166,28 @@ scripts/            Build, packaging, demo, and media tools
 tests/              Unit and browser checks
 ```
 
-## What comes next
+## Projects, MCP and workspace sync
 
-MCP access for AI assistants is being developed separately. Account sync, connected task inboxes, Gmail/Notion/Slack integrations, and ongoing workspace chat are future work. Their appearance in the roadmap is not a claim that they are connected today.
+Tabby now supports projects with linked tasks, pinned browser links and multiline notes. Projects can be archived and restored. Insights adds period/project filters, daily totals, classification coverage and a JSON report export.
+
+The local MCP server reads live sessions, tasks and browser tabs, then creates or completes tasks when separate write access is enabled. Run `npm run setup:mcp`, reload the built extension and follow [MCP setup](docs/MCP.md). It uses an independent token and loopback bridge; DeepSeek remains the extension's default model.
+
+Optional Chrome account sync shares projects, tasks, notes and saved links. It preserves local settings and handles conflicts and quota errors explicitly. See [projects, sync and analytics](docs/PROJECTS_AND_SYNC.md) for setup and limits. Real Chrome storage operations are verified; delivery between two signed-in computers is not yet verified.
+
+`npm run test:workspace` exercises the installed extension with an official SDK MCP client, including real data, writes, retries, worker restart and access revocation, without model calls. Cloud-hosted MCP access and collaborative server workspaces are not included.
+
+## Google Calendar, Gmail and AI chat
+
+Open **Calendar & mail** for a read-only two-week agenda and the latest inbox previews. Import items into tasks, or review an AI draft from an email. **AI chat** keeps a conversation and offers confirmed cards to create/complete tasks and start focus. Calendar sharing is optional; DeepSeek remains the default model.
+
+Google requires your own **Desktop app OAuth client**: enable the Calendar/Gmail APIs, configure the consent screen/test user, then run `npm run setup:google -- /path/to/client.json`. Restart the local server and reload the built extension. Credentials stay under `.local/`. Full setup, privacy and limitations: [Google and chat](docs/GOOGLE_AND_CHAT.md).
+
+`npm run test:google-chat` checks real extension UI/storage with explicit API fixtures. A synthetic live DeepSeek chat request also passed; live Google account access remains unverified until an OAuth client is configured.
+
+## Ambiguous team chat
+
+**Ambiguous → Connect Ambiguous** opens account sign-in. Load a channel, review a message as a task, focus on it, then review and explicitly send the session report to its original thread. The local server connects to `https://app.ambiguous.ai/mcp`; a documented REST adapter is also available. Chat reads and factual reports do not call the AI provider. Credentials stay on the user's local server.
+
+Setup, delivery protection and limits: [Ambiguous integration](docs/AMBIGUOUS.md). `npm run test:ambiguous` verifies the full Chrome → local HTTP → SDK MCP path against a chat fixture. **Live extension OAuth/MCP access and real chat delivery are not yet verified.** Restart the updated local server and reload the extension before connecting. Our final-delivery project and completed release-verification task were created and used in the real Ambiguous workspace; see [the hackathon walkthrough](docs/AMBIGUOUS_DEMO.md).
 
 For the next coding agent, start with [AGENTS.md](AGENTS.md) and [AGENT_HANDOFF.md](AGENT_HANDOFF.md). For the short video, see [the render notes](scripts/video/README.md).
