@@ -9,6 +9,7 @@ import { cleanUrl, contextKey, excluded, redact } from '../shared/privacy';
 import { assessmentSchema, groupSchema, nextSchema, summarySchema, taskSchema, type AIRequest } from '../shared/schemas';
 import { workspaceCommands } from './workspace-worker';
 import { googleLink } from '../shared/workspace';
+import { apiTarget } from './ai-transport';
 
 let state: AppState; let queue: Promise<unknown> = Promise.resolve(); let timer: ReturnType<typeof setTimeout> | undefined;
 let generation = 0; let controller: AbortController | undefined;
@@ -104,15 +105,15 @@ function aiContext(): AIRequest['context'] {
     ...(s ? { session: JSON.stringify({ phase: s.phase, totals: s.totals, confirmedStep: s.lastConfirmedStep, events: s.events.slice(-12), completedTasks: state.tasks.filter(t => t.completedAt && t.completedAt >= s.startedAt).map(t => t.title) }).slice(0, 5000), corrections: Object.entries(s.corrections).slice(-40).map(([context, v]) => ({ context, reason: v.reason })) } : {}) };
 }
 async function api(path: string, payload: unknown, signal?: AbortSignal) {
-  const token = state.settings.pairToken;
-  if (!token) throw Object.assign(new Error('PAIRING_REQUIRED'), { code: 'PAIRING_REQUIRED' });
+  const target = apiTarget(state.settings, path);
   const abort = new AbortController(); pendingRequests.add(abort);
   try {
-    const response = await fetch(`http://127.0.0.1:4318/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Tabby-Token': token }, body: JSON.stringify(payload), signal: AbortSignal.any([abort.signal, AbortSignal.timeout(29000), ...(signal ? [signal] : [])]) });
+    const response = await fetch(target.url, { method: 'POST', headers: target.headers, body: JSON.stringify(payload), redirect: 'error', credentials: 'omit', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(29000), ...(signal ? [signal] : [])]) });
+    if (response.status === 429 && target.cloud) throw Object.assign(new Error('CLOUD_RATE_LIMIT'), { code: 'CLOUD_RATE_LIMIT' });
     const data = await response.json();
     if (!response.ok) throw Object.assign(new Error(data.error?.code || 'API_UNAVAILABLE'), data.error);
     return data;
-  } catch (e: any) { if (e.code) throw e; throw Object.assign(new Error(signal?.aborted || abort.signal.aborted ? 'REQUEST_CANCELLED' : 'SERVER_OFFLINE'), { code: signal?.aborted || abort.signal.aborted ? 'REQUEST_CANCELLED' : 'SERVER_OFFLINE' }); }
+  } catch (e: any) { if (e.code) throw e; const code = signal?.aborted || abort.signal.aborted ? 'REQUEST_CANCELLED' : target.cloud ? 'CLOUD_OFFLINE' : 'SERVER_OFFLINE'; throw Object.assign(new Error(code), { code }); }
   finally { pendingRequests.delete(abort); }
 }
 async function failure(e: any) {
@@ -264,7 +265,14 @@ async function command(message: any) {
           state.google.events = excluded('https://calendar.google.com', state.settings.excludedSites) ? [] : state.google.events.filter(e => !excluded(e.url, state.settings.excludedSites));
           state.google.messages = state.google.messages.filter(e => !excluded(e.url, state.settings.excludedSites));
         }
-        if (typeof x.pairToken === 'string' && x.pairToken.length <= 256) state.settings.pairToken = x.pairToken.trim();
+        const previousMode = state.settings.aiMode;
+        if (typeof x.pairToken === 'string' && x.pairToken.length <= 256) {
+          state.settings.pairToken = x.pairToken.trim();
+          // Preserve explicit local-companion setup used by existing clients.
+          if (state.settings.pairToken && x.aiMode === undefined) state.settings.aiMode = 'local';
+        }
+        if (x.aiMode === 'cloud' || x.aiMode === 'local') state.settings.aiMode = x.aiMode;
+        if (previousMode !== state.settings.aiMode) state.ai = { connected: false, code: 'AI_NOT_CONNECTED' };
         if (Number.isFinite(x.breakMinutes)) state.settings.breakMinutes = Math.max(1, Math.min(120, x.breakMinutes));
         if (s) { s.revision++; s.category = 'unknown'; } state.assessment = null; state.page = null;
         cache.clear(); for (const request of pendingRequests) request.abort();

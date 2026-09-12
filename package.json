@@ -29,7 +29,8 @@
     "preview:landing": "vite preview --host 127.0.0.1 --outDir dist-landing",
     "test:smoke": "tsx tests/smoke.ts",
     "demo": "node scripts/demo.mjs",
-    "package:extension": "npm run build && node scripts/package-extension.mjs"
+    "package:extension": "npm run build && node scripts/package-extension.mjs",
+    "test:cloud": "tsx tests/cloud-browser.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",

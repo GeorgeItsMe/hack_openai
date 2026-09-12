@@ -61,3 +61,11 @@ input:checked{accent-color:var(--orange)}
 .ambiguous-message p { margin: 12px 0; overflow-wrap: anywhere; }
 .ambiguous-report textarea { white-space: pre-wrap; font-size: 12px; line-height: 1.7; }
 .ambiguous-report .eyebrow { margin-bottom: 16px; }
+
+/* Simple cloud AI onboarding; technical integrations stay optional. */
+.ai-welcome { margin-bottom: 20px; background: #fff3e9; }
+.ai-welcome h2 { margin-top: 12px; }
+.ai-welcome .ai-disclosure { font-size: 12px; line-height: 1.65; color: #716e65; margin: 14px 0 18px; }
+.advanced-settings { grid-column: 1 / -1; min-width: 0; }
+.advanced-settings > summary { cursor: pointer; padding: 20px 0; font-weight: 650; }
+.advanced-settings > .card { margin-top: 16px; }

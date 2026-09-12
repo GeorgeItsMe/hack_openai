@@ -1,0 +1,53 @@
+import { chromium, expect } from '@playwright/test';
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { CLOUD_AI_ENDPOINT, TABBY_EXTENSION_ORIGIN } from '../src/shared/cloud';
+import type { AppState } from '../src/shared/types';
+
+// Explicitly paid production check. No mocks and no local AI server or credentials.
+if (!process.argv.includes('--live')) throw new Error('Pass --live to run one real shared DeepSeek chat completion.');
+const run = promisify(execFile);
+const temp = await mkdtemp(join(tmpdir(), 'tabby-cloud-live-'));
+let browser: Awaited<ReturnType<typeof chromium.launchPersistentContext>> | undefined;
+try {
+  const expected = JSON.parse(await readFile('public/downloads/Tabby.json', 'utf8'));
+  const response = await fetch('https://tabby-pi.vercel.app/downloads/Tabby.zip'); assert.equal(response.status, 200);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), expected.sha256);
+  const zip = join(temp, 'Tabby.zip'); const extension = join(temp, 'Tabby');
+  await writeFile(zip, bytes); await mkdir(extension); await run('unzip', ['-q', zip, '-d', extension]);
+  const denied = await fetch(CLOUD_AI_ENDPOINT + '?op=status', { method: 'POST', headers: { Origin: 'https://unrelated.example', 'Content-Type': 'application/json' }, body: '{}' });
+  assert.equal(denied.status, 403);
+  browser = await chromium.launchPersistentContext(join(temp, 'profile'), { channel: 'chromium', headless: true, viewport: { width: 390, height: 844 }, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`] });
+  const requests: string[] = []; const errors: string[] = [];
+  browser.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
+  const page = await browser.newPage(); page.on('pageerror', e => errors.push(e.message));
+  await page.goto(TABBY_EXTENSION_ORIGIN + '/sidepanel.html');
+  const get = () => page.evaluate(async () => (await chrome.runtime.sendMessage({ type: 'GET' })).data as AppState);
+  await expect(page.getByRole('button', { name: 'Enable AI', exact: true })).toBeVisible();
+  assert.equal((await get()).settings.pairToken, ''); assert.equal((await get()).settings.mcpToken, ''); assert.equal(requests.length, 0);
+  await mkdir('artifacts', { recursive: true }); await page.screenshot({ path: 'artifacts/tabby-cloud-first-run.png' });
+  await page.getByRole('button', { name: 'Enable AI', exact: true }).click();
+  await expect.poll(async () => (await get()).ai.connected, { timeout: 35000 }).toBe(true);
+  assert.equal((await get()).ai.model, 'deepseek-v3.2');
+  console.log('PASS: published ZIP connects to real Tabby Cloud in one click, no local server/token or model mock.');
+  await page.getByRole('button', { name: 'AI chat', exact: true }).click();
+  await page.getByLabel('Message Tabby').fill("Create one task titled 'Prepare the Tabby demo' with two short steps. Reply in English.");
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  await expect(page.locator('.chat-proposal')).toHaveCount(1, { timeout: 35000 });
+  assert.equal((await get()).tasks.length, 0);
+  await page.getByRole('button', { name: 'Create task', exact: true }).click();
+  const state = await get(); assert.equal(state.tasks.length, 1); assert.match(state.tasks[0].title, /Tabby demo/i);
+  assert.ok(state.chat.messages.some(m => m.role === 'assistant' && m.content.length > 5));
+  assert.ok(requests.every(url => url.startsWith(CLOUD_AI_ENDPOINT)));
+  assert.equal(state.settings.aiMode, 'cloud'); assert.equal(state.settings.pairToken, ''); assert.equal(state.settings.readText, false);
+  await page.screenshot({ path: 'artifacts/tabby-cloud-live-chat.png', fullPage: true });
+  await page.reload(); assert.equal((await get()).tasks.length, 1); assert.deepEqual(errors, []);
+  await writeFile('artifacts/tabby-cloud-live.json', JSON.stringify({ at: new Date().toISOString(), version: expected.version, sha256: expected.sha256, model: state.ai.model, usage: state.usage, httpRequests: requests.length, noLoopbackRequests: true, noCredentials: true, consentRequired: true, realModel: true, taskConfirmedAndPersisted: true }, null, 2) + '\n');
+  console.log('PASS: real DeepSeek answer and task proposal, explicit save, persistence and no loopback calls; version ' + expected.version + '.');
+} finally { await browser?.close(); await rm(temp, { recursive: true, force: true }); }

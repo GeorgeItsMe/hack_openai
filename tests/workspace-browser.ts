@@ -92,7 +92,9 @@ try {
   pass('real service worker termination and restart retain workspace and MCP idempotency receipts');
   await panel.bringToFront(); await panel.getByRole('button', { name: 'Insights', exact: true }).click(); await expect(panel.getByRole('heading', { name: 'Your recent rhythm' })).toBeVisible();
   await panel.screenshot({ path: 'artifacts/tabby-insights.png', fullPage: true });
-  await panel.getByRole('button', { name: 'Settings', exact: true }).click(); await expect(panel.getByRole('switch', { name: /Allow MCP reading/ })).toBeChecked();
+  await panel.getByRole('button', { name: 'Settings', exact: true }).click();
+  await panel.getByText('Connected tools & advanced settings', { exact: true }).click();
+  await expect(panel.getByRole('switch', { name: /Allow MCP reading/ })).toBeChecked();
   await panel.getByRole('switch', { name: /Allow MCP reading/ }).click(); await expect.poll(async () => (await call('tabby_get_session')).isError).toBe(true);
   assert.equal((await get()).settings.mcpWriteEnabled, false);
   await cmd('SYNC_CLEAR', { confirm: true }); assert.equal(Object.keys(await panel.evaluate(() => chrome.storage.sync.get(null))).filter(k => k.startsWith('tabby:v1:')).length, 0);

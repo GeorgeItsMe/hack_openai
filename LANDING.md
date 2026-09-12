@@ -19,7 +19,7 @@ npm run preview:landing
 
 The standalone production landing page is generated in `dist-landing/`. Upload that directory to any static host. The existing extension and server scripts are separate and preserved.
 
-Vercel is configured in `vercel.json` to run `npm run build:landing` and publish only `dist-landing/`. Import the repository with the root directory set to `./`; no environment variables are needed. See [README.md](./README.md) for deployment instructions.
+Vercel is configured in `vercel.json` to run `npm run build:landing` and publish `dist-landing/` plus the bounded `/api/tabby` AI function. Import the repository with the root directory set to `./`; the website itself needs no secrets. The included AI function needs the production-only `TABBY_CLOUD_GPTUNNEL_KEY` secret; see [Cloud AI](docs/CLOUD_AI.md). See [README.md](./README.md) for deployment instructions.
 
 ## What works
 

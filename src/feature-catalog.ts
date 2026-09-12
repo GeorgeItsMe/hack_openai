@@ -43,7 +43,7 @@ export const featureGroups = [
   },
   {
     id: 'connections', label: 'AI & Google',
-    description: 'Implemented in the local extension. AI needs your provider connection. Google needs separate OAuth setup and consent; the live Google account sign-in flow is still awaiting verification.',
+    description: 'Implemented in the local extension. DeepSeek AI is included; enable it once in Tabby. Google needs separate OAuth setup and consent; the live Google account sign-in flow is still awaiting verification.',
     items: [
       { icon: MessageCircle, title: 'Think it through with Tabby', description: 'Keep an ongoing chat about your tasks and goal. Use suggested prompts, get replies in your language, cancel a response, retry, or clear the saved conversation.', tag: 'PERSISTENT AI CHAT' },
       { icon: CheckCheck, title: 'A suggestion you can act on', description: 'Chat can propose creating a task, completing an existing task, or starting focus. Each action appears as a card for your confirmation; an applied card cannot run twice.', tag: 'CONFIRMED CHAT ACTIONS' },

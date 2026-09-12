@@ -7,7 +7,8 @@ export type Language = 'en';
 // Upgrade saved installs without changing user-authored tasks, goals or history.
 export function normalizeLanguage(state: AppState): AppState {
   const previousLanguage = state.settings.language;
-  state.settings = { ...initialState().settings, ...state.settings, language: 'en' };
+  const aiMode = state.settings.aiMode === 'local' || (!state.settings.aiMode && state.settings.pairToken) ? 'local' : 'cloud';
+  state.settings = { ...initialState().settings, ...state.settings, language: 'en', aiMode };
   state.projects ??= []; state.notes ??= []; state.pinnedTabs ??= [];
   state.mcpReceipts ??= []; state.sync ??= { code: 'SYNC_OFF' };
   state.ambiguous ??= initialAmbiguous();
@@ -34,7 +35,7 @@ export interface Session {
   lastConfirmedStep: string; events: Array<{ at: number; type: string; detail?: string }>;
   summary?: { facts: string[]; suggestions: string[] }; resumeCard: boolean;
 }
-export interface Settings { language: Language; mode: 'soft' | 'strict'; readText: boolean; consent: boolean; excludedSites: string[]; breakMinutes: number; pairToken: string; mcpEnabled: boolean; mcpWriteEnabled: boolean; mcpToken: string; syncEnabled: boolean }
+export interface Settings { language: Language; mode: 'soft' | 'strict'; readText: boolean; consent: boolean; excludedSites: string[]; breakMinutes: number; pairToken: string; aiMode: 'cloud' | 'local'; mcpEnabled: boolean; mcpWriteEnabled: boolean; mcpToken: string; syncEnabled: boolean }
 export interface Usage { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number; total_cost?: number }
 export interface AppState {
   version: 1; settings: Settings; tasks: Task[]; session: Session | null; history: Session[];
@@ -50,7 +51,7 @@ export interface AppState {
   groupSnapshot?: Record<number, string>;
 }
 export const initialState = (): AppState => ({ version: 1,
-  settings: { language: 'en', mode: 'soft', readText: false, consent: false, excludedSites: [], breakMinutes: 5, pairToken: '', mcpEnabled: false, mcpWriteEnabled: false, mcpToken: '', syncEnabled: false },
+  settings: { language: 'en', mode: 'soft', readText: false, consent: false, excludedSites: [], breakMinutes: 5, pairToken: '', aiMode: 'cloud', mcpEnabled: false, mcpWriteEnabled: false, mcpToken: '', syncEnabled: false },
   projects: [], notes: [], pinnedTabs: [], mcpReceipts: [], sync: { code: 'SYNC_OFF' },
   tasks: [], session: null, history: [], page: null, assessment: null,
   ai: { connected: false, code: 'AI_NOT_CONNECTED' }, usage: {}, ambiguous: initialAmbiguous(), google: initialGoogleState(), chat: { messages: [] } });

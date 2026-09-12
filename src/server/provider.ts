@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { contextSchema, outputSchemas, requestSchema, type AIRequest } from '../shared/schemas';
-import { cleanUrl, redact } from '../shared/privacy';
-import type { Usage } from '../shared/types';
+import { contextSchema, outputSchemas, requestSchema, type AIRequest } from '../shared/schemas.js';
+import { cleanUrl, redact } from '../shared/privacy.js';
+import type { Usage } from '../shared/types.js';
 export class AppError extends Error {
   usage?: Usage;
   constructor(public code: string, public status = 502, public available?: string[]) { super(code); }

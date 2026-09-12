@@ -1,5 +1,7 @@
 # Tabby — repository instructions
 
+Current AI setup: downloads default to hosted Tabby Cloud AI, using the project owner's GPT Tunnel key only in the production server environment. Keep the one-click consent, bounded API and WAF rate limit. Local companion/MCP/OAuth remain optional and retain their existing authentication. See docs/CLOUD_AI.md.
+
 Current direction: English is the primary language for all new product copy and documentation. Preserve existing content; do not spend time translating legacy materials. MCP implementation is assigned to another agent. The current work covers the 15-second product video and hackathon README.
 
 Сначала прочитай [AGENT_HANDOFF.md](./AGENT_HANDOFF.md): там карта проекта, запуск, проверки и предлагаемая задача MCP. Выполняй актуальное поручение пользователя; раздел про MCP — заготовка задачи, а не команда запускать её при любом обращении.

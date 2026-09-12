@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { chatContextSchema, chatSchema } from './workspace';
+import { chatContextSchema, chatSchema } from './workspace.js';
 const short = z.string().trim().min(1).max(600);
 export const assessmentSchema = z.object({ category: z.enum(['aligned', 'distracting', 'unknown']), reason: short, nextStep: short }).strict();
 export const taskSchema = z.object({ title: z.string().trim().min(1).max(180), steps: z.array(short).max(8), due: z.union([z.literal(''), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]), dueEvidence: z.string().max(500) }).strict();

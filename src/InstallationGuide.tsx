@@ -50,7 +50,7 @@ export function InstallationGuide({ onDemo }: { onDemo: () => void }) {
     </ol>
 
     <div className="install-ready"><span className="install-ready-icon"><Cat size={25} /></span><div><strong>There’s a new cat in your browser.</strong><p>Click the <Puzzle size={14} aria-label="puzzle-piece" /> extensions icon, pin <strong>Tabby</strong> <Pin size={13} aria-hidden="true" />, then click the cat. Add a task or start your first focus session.</p></div></div>
-    <p className="install-scope">Tasks, projects, notes, saved links, and timers are ready right away. AI, Google, and MCP need optional companion setup.</p>
+    <p className="install-scope">Tasks, projects, notes, saved links, and timers are ready right away. Click Enable AI in Tabby for included DeepSeek assistance. No account, API key or local server needed.</p>
 
     <details className="install-ai"><summary><FolderOpen size={18} /><span>Need a little help installing?</span></summary><div>
       <p><strong>Can’t see the folder?</strong> Unzip the download first. On Windows, choose Extract All; opening the ZIP alone doesn’t extract it.</p>
@@ -59,10 +59,10 @@ export function InstallationGuide({ onDemo }: { onDemo: () => void }) {
       <p><strong>No Developer mode?</strong> A work or school computer may restrict extensions. Ask its administrator or use your own computer.</p>
       <p>This preview uses Chrome’s manual installation. <a href="https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked" target="_blank" rel="noreferrer">Chrome’s installation guide <ArrowUpRight size={12} /></a></p>
     </div></details>
-    <details className="install-ai"><summary><Sparkles size={18} /><span>Want AI or connected tools? <small>Optional · set up when you’re ready</small></span></summary><div>
-      <p>Your downloaded Tabby is ready for everyday tasks and focus. Connected features use a separate local companion and your own accounts. The ZIP contains the browser extension; it does not include the companion server.</p>
+    <details className="install-ai"><summary><Sparkles size={18} /><span>Want connected tools? <small>Optional · set up when you’re ready</small></span></summary><div>
+      <p>DeepSeek AI is included in the hackathon preview. Enable it once after reviewing the data disclosure; fair-use limits apply. Optional Google and MCP connections use a separate companion and your own accounts.</p>
       <ul className="install-connection-links">
-        <li><a href={`${repository}#extension-and-local-server`} target="_blank" rel="noreferrer">AI companion setup <ArrowUpRight size={14} /></a><span>Your own provider connection; usage charges may apply.</span></li>
+        <li><a href={`${repository}#extension-and-local-server`} target="_blank" rel="noreferrer">Advanced: your own AI companion <ArrowUpRight size={14} /></a><span>Optional. Included AI works without this setup.</span></li>
         <li><a href={`${repository}/blob/main/docs/MCP.md`} target="_blank" rel="noreferrer">Connect an MCP assistant <ArrowUpRight size={14} /></a><span>Five local tools, with separate read and task-write permissions.</span></li>
         <li><a href={`${repository}/blob/main/docs/GOOGLE_AND_CHAT.md`} target="_blank" rel="noreferrer">Connect Google Calendar &amp; Gmail <ArrowUpRight size={14} /></a><span>Developer OAuth setup; live Google sign-in is not yet verified.</span></li>
         <li><a href={`${repository}/blob/main/docs/PROJECTS_AND_SYNC.md`} target="_blank" rel="noreferrer">Optional Chrome workspace sync <ArrowUpRight size={14} /></a><span>Enable in Settings. Delivery between computers is not yet verified.</span></li>

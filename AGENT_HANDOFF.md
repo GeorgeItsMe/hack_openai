@@ -1,5 +1,14 @@
 # Tabby — project handoff
 
+## Included cloud AI, Tabby 1.0.4 — 12 September 2026
+
+- User explicitly requested a simple install and shared use of their GPT Tunnel key. Implemented and published hosted AI at `https://tabby-pi.vercel.app/api/tabby`. The key is a production-only Vercel Secret named `TABBY_CLOUD_GPTUNNEL_KEY`; it is never embedded in the ZIP or browser code. Provider/model stay fixed to GPT Tunnel / `deepseek-v3.2`.
+- Fresh installs choose cloud AI and require only **Enable AI** after a short disclosure. No account, local server or pairing token is needed. Settings starts with included AI; MCP and local-provider fields are collapsed under **Connected tools & advanced settings**. Page-text and site permissions remain separate. Old paired installs retain local AI until **Use included AI** is chosen, so no existing consent silently changes transport.
+- `api/tabby.ts` / `src/server/cloud.ts` expose only bounded, validated status and AI operations with sanitized errors. Production WAF rule **Tabby shared AI rate limit** is enabled at 60 POST requests/minute/IP for `/api/tabby` (per region); process-local limits add backpressure. These are not a durable spending cap. Set `TABBY_CLOUD_ENABLED=0` and redeploy to disable service. See [Cloud AI](docs/CLOUD_AI.md).
+- Corrected the hosted Node ESM import paths after the initial deployment exposed an import-resolution failure; the final function starts successfully. Added a compiled plain-Node runtime regression test. Live verified deployment: `dpl_C1NfidubvX5DYmfBbGDyD3VkKC2d`.
+- Validation: extension/landing builds, 57 unit/protocol/runtime tests, 23 core browser checks, seven Google/chat, seven workspace/MCP and five Ambiguous fixture groups, plus the cloud onboarding browser test. Downloaded production ZIP passed clean installation. `tests/cloud-live-browser.ts --live` then connected real DeepSeek and created a reviewed/persisted task from a real response in a fresh Chromium profile, with no pairing credentials or loopback calls. This makes one paid synthetic completion. Report: `artifacts/tabby-cloud-live.json`; first-run/chat screenshots accompany it. The site's actual download button and updated instructions also passed.
+- Local companion, Google/OAuth and MCP transport remain separate and authenticated; the local pairing token is never sent to cloud AI. Live Google/Ambiguous account delivery is still not verified. Existing user demo/browser/server processes were left running.
+
 ## Published download — 12 September 2026
 
 - Published **Tabby 1.0.3** to https://tabby-pi.vercel.app/downloads/Tabby.zip. Production deployment: `dpl_Href6qCmWTT5EnJbJsfu4Lnjsj4Z`. ZIP: 319,517 bytes, SHA-256 `42e69bdc9f0f3d5184b8106f6e507ebc4f8b512ec82f41cd9f69ddb3fdbf032b`.

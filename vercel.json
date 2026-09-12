@@ -23,5 +23,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/tabby.ts": {
+      "maxDuration": 30
+    }
+  }
 }

@@ -12,7 +12,7 @@ This is a manual-install preview for desktop Chrome, not a Chrome Web Store list
 
 ## Ready immediately
 
-Tasks, projects, notes, saved links, tab search, duplicate cleanup and timers work without a companion server. AI features, Google and MCP use optional local companion setup and the user's own connections; those are not included in the browser ZIP. See the [repository setup](../README.md#extension-and-local-server), [MCP](MCP.md), [Google and chat](GOOGLE_AND_CHAT.md), and [workspace sync](PROJECTS_AND_SYNC.md) guides.
+Tasks, projects, notes, saved links, tab search, duplicate cleanup and timers work without a companion server. AI is included in the hackathon preview. Click **Enable AI** and review the data disclosure; no account, API key or local server is needed. Fair-use limits apply. Google and MCP still use optional local companion setup and the user's own connections. See the [repository setup](../README.md#extension-and-local-server), [MCP](MCP.md), [Google and chat](GOOGLE_AND_CHAT.md), and [workspace sync](PROJECTS_AND_SYNC.md) guides.
 
 ## Publishing an updated download
 
@@ -36,6 +36,6 @@ Commit the reviewed ZIP and metadata with the landing update. Vercel serves the 
 node --import tsx tests/package-browser.ts https://tabby-pi.vercel.app/downloads/Tabby.zip
 ```
 
-For this download, the isolated source snapshot passed TypeScript/build and 48 unit/protocol tests. Google/AI fixture results are not claims of live account verification. The package browser check requires no local server or model calls.
+For 1.0.4, TypeScript/build and 57 unit/protocol/runtime tests passed. The published ZIP also passed a real cloud DeepSeek check in a fresh Chrome profile without local setup. Google fixture results are not claims of live account verification. The package browser check itself requires no local server or model calls.
 
 GitHub Actions checks the freshly built files against the committed ZIP with `scripts/verify-download.mjs`, in addition to type checks, unit tests and the landing build.

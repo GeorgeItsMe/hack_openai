@@ -6,7 +6,7 @@
 <p align="center">A context-aware Chrome extension for tasks, focus sessions, and a calmer browser.<br><strong>Built as a working hackathon prototype.</strong></p>
 <p align="center"><a href="https://tabby-pi.vercel.app/">Try Tabby</a> · <a href="docs/INSTALLATION.md">Install the extension</a> · <a href="#why-we-built-tabby">The concept</a> · <a href="#what-works">Features</a> · <a href="#development">Development</a></p>
 
-**[Download Tabby.zip](https://tabby-pi.vercel.app/downloads/Tabby.zip)** — ready to install in Chrome. Unzip it, enable Developer mode, then choose Load unpacked and select the Tabby folder. [Three-step guide](docs/INSTALLATION.md). AI and connected tools have separate optional setup below.
+**[Download Tabby.zip](https://tabby-pi.vercel.app/downloads/Tabby.zip)** — ready to install in Chrome. Unzip it, enable Developer mode, then choose Load unpacked and select the Tabby folder. [Three-step guide](docs/INSTALLATION.md). Click **Enable AI** once: DeepSeek is included, with no account, API key or local server needed. Google and MCP are optional advanced connections.
 
 **Tabby × Ambiguous:** we used Ambiguous to organize Tabby's product brief, architecture decisions, delivery tasks and release evidence, and used Ambi to review and refine our demo narrative. We also built an Ambiguous MCP integration into the extension. [Open the workspace references](docs/AMBIGUOUS_WORKSPACE.md) · [See the demo walkthrough](docs/AMBIGUOUS_DEMO.md).
 
@@ -45,11 +45,13 @@ Tasks, projects, notes, connected tools, and browser tabs support the same idea:
 | Ambiguous | Review chat messages as tasks and explicitly send session reports; live account delivery remains unverified. |
 | Chrome workspace sync | Opt in to sharing projects, tasks, notes and saved links; delivery between computers remains unverified. |
 
-The extension uses **DeepSeek 3.2 through GPT Tunnel**. AI requires a configured local server; manual tasks and timers work without a model connection. English is the primary product language.
+The extension uses **DeepSeek 3.2 through GPT Tunnel** via Tabby Cloud. The hackathon preview includes AI: install, review the short data disclosure and click **Enable AI**. The project pays provider usage; users need no key, account or local server. Fair-use limits apply. Manual tasks and timers work with AI disabled. English is the primary product language.
 
 The landing page also has an interactive workspace preview with local tasks and a timer. Its data is separate from the installed extension, and it cannot access your real browser tabs.
 
 ## Extension and local server
+
+**Advanced and optional.** The download already includes hosted AI. Use the setup below only for your own local provider or connected tools. Hosted service details: [Tabby Cloud](docs/CLOUD_AI.md).
 
 **Requirements:** Node.js 24.x, npm, Chrome 120+, and your own GPT Tunnel API key for AI features.
 
@@ -80,7 +82,7 @@ Leave the server running, then:
 1. Open `chrome://extensions` and enable **Developer mode**.
 2. Click **Load unpacked** and select the project's **`dist/extension`** folder.
 3. Pin **Tabby** and click its icon to open the side panel.
-4. Open **Settings**. Paste the contents of `.local/pairing.txt` into **Local server connection token**, then click **Connect & check**. This is a separate connection token, not your provider API key.
+4. Open **Settings → Connected tools & advanced settings**. Paste `.local/pairing.txt` into **Local server connection token**, then click **Use local AI**. This is a separate connection token, not your provider API key.
 5. Review the data disclosure and enable **Allow AI analysis**. Reading visible page text requires its separate toggle and permission for that site.
 6. Enter a goal and click **Start focusing**. Stay on a relevant page for roughly eight seconds plus model response time, then try another page and inspect the suggestion.
 

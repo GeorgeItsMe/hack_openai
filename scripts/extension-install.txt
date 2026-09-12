@@ -16,6 +16,8 @@ INSTALL IN CHROME
    Select the folder, not the ZIP file.
 
 Click Chrome's puzzle-piece icon, pin Tabby, then click the Tabby cat.
+Click Enable AI once to use the included DeepSeek assistance. No account, API key
+or local server is needed. Review the short data disclosure before enabling it.
 Add your first task or start a focus session. You're in.
 
 KEEP THE FOLDER
@@ -24,7 +26,8 @@ If you see a manifest error, choose the inner folder that contains manifest.json
 
 WHAT'S READY
 Tasks, projects, notes, saved links, tab search, duplicate cleanup and timers.
-AI, Google and MCP need separate local companion setup and your own connections.
+AI is included in this hackathon preview, with fair-use limits.
+Optional Google and MCP connections still use separate companion setup.
 The browser ZIP contains no server, API key or account credentials.
 
 This is a manual-install preview, not a Chrome Web Store installation.
