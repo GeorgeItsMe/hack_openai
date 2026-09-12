@@ -1,4 +1,4 @@
-import { initialState, type AppState, type PageContext, type Assessment, type Usage, type Task } from '../shared/types';
+import { initialState, normalizeLanguage, type AppState, type PageContext, type Assessment, type Usage, type Task } from '../shared/types';
 import { createSession, settle, transition, event, cacheKey, requestCurrent } from '../shared/engine';
 import { cleanUrl, contextKey, excluded, redact } from '../shared/privacy';
 import { assessmentSchema, groupSchema, nextSchema, summarySchema, taskSchema, type AIRequest } from '../shared/schemas';
@@ -9,7 +9,7 @@ const cache = new Map<string, Assessment>(); const pendingRequests = new Set<Abo
 const ready = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }).then(async () => {
   const stored = (await chrome.storage.local.get('app')).app as AppState | undefined;
   state = stored?.version === 1 ? stored : initialState();
-  state.settings = { ...initialState().settings, ...state.settings };
+  normalizeLanguage(state);
   if (state.session && state.session.phase !== 'finished') {
     const s = state.session;
     // After an unobserved long sleep, do not attribute the gap to a website.
@@ -85,7 +85,7 @@ async function api(path: string, payload: unknown, signal?: AbortSignal) {
   if (!token) throw Object.assign(new Error('PAIRING_REQUIRED'), { code: 'PAIRING_REQUIRED' });
   const abort = new AbortController(); pendingRequests.add(abort);
   try {
-    const response = await fetch(`http://127.0.0.1:4318/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-FocusTab-Token': token }, body: JSON.stringify(payload), signal: AbortSignal.any([abort.signal, AbortSignal.timeout(29000), ...(signal ? [signal] : [])]) });
+    const response = await fetch(`http://127.0.0.1:4318/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Tabby-Token': token }, body: JSON.stringify(payload), signal: AbortSignal.any([abort.signal, AbortSignal.timeout(29000), ...(signal ? [signal] : [])]) });
     const data = await response.json();
     if (!response.ok) throw Object.assign(new Error(data.error?.code || 'API_UNAVAILABLE'), data.error);
     return data;
@@ -93,6 +93,7 @@ async function api(path: string, payload: unknown, signal?: AbortSignal) {
   finally { pendingRequests.delete(abort); }
 }
 async function failure(e: any) {
+  if (e.usage) addUsage(e.usage);
   state.ai = { connected: false, code: e.code || 'SERVER_OFFLINE', available: e.available, at: Date.now() };
   if (state.session) { settle(state.session); state.session.category = 'unknown'; }
   state.assessment = null; state.pendingAt = undefined; await stopScripts(); await save();
@@ -116,7 +117,7 @@ async function evaluate() {
     if (!observing() || !state.settings.consent || !state.page || !state.pendingAt || state.pendingAt > Date.now() + 100) return;
     await chrome.alarms.clear('evaluate'); state.pendingAt = undefined;
     const s = state.session!; const p = state.page; const key = cacheKey(s, p.key);
-    if (s.corrections[p.key]) { await applyAssessment({ category: 'aligned', reason: state.settings.language === 'ru' ? 'Вы отметили этот материал как относящийся к цели.' : 'You marked this material as relevant.', nextStep: s.lastConfirmedStep || (state.settings.language === 'ru' ? 'Продолжайте текущую задачу.' : 'Continue your current task.'), source: 'user', at: Date.now(), key: p.key }); return; }
+    if (s.corrections[p.key]) { await applyAssessment({ category: 'aligned', reason: 'You marked this material as relevant.', nextStep: s.lastConfirmedStep || ('Continue your current task.'), source: 'user', at: Date.now(), key: p.key }); return; }
     const cached = cache.get(key);
     if (cached && Date.now() - cached.at < 120000) { await applyAssessment(cached); return; }
     const token = generation; controller = new AbortController(); state.ai.code = 'ANALYZING'; await save();
@@ -205,13 +206,13 @@ async function command(message: any) {
       case 'CORRECT':
         if (s && observing() && state.page) {
           s.corrections[state.page.key] = { reason: 'User confirmed relevance for this exact page context', at: Date.now() }; s.revision++; event(s, 'correction', state.page.title); invalidate();
-          await applyAssessment({ category: 'aligned', reason: state.settings.language === 'ru' ? 'Вы подтвердили: это по делу.' : 'You confirmed this is relevant.', nextStep: state.settings.language === 'ru' ? 'Продолжайте выбранную задачу.' : 'Continue your selected task.', source: 'user', at: Date.now(), key: state.page.key });
+          await applyAssessment({ category: 'aligned', reason: 'You confirmed this is relevant.', nextStep: 'Continue your selected task.', source: 'user', at: Date.now(), key: state.page.key });
         } break;
       case 'RETURN': await returnToWork(); break;
       case 'CONFIRM_STEP': if (s) { s.lastConfirmedStep = String(message.step || '').slice(0, 600); event(s, 'confirmed-step', s.lastConfirmedStep); } break;
       case 'SETTINGS': {
         const x = message.settings || {};
-        if (['ru', 'en'].includes(x.language)) state.settings.language = x.language;
+        state.settings.language = 'en';
         if (['soft', 'strict'].includes(x.mode)) state.settings.mode = x.mode;
         for (const key of ['consent', 'readText'] as const) if (typeof x[key] === 'boolean') state.settings[key] = x[key];
         if (Array.isArray(x.excludedSites)) {
@@ -296,7 +297,7 @@ chrome.alarms.onAlarm.addListener(alarm => {
     }
   });
 });
-chrome.runtime.onInstalled.addListener(() => { void chrome.contextMenus.removeAll().then(() => chrome.contextMenus.create({ id: 'task-selection', title: 'FocusTab: создать задачу / Create task', contexts: ['selection'] })); });
+chrome.runtime.onInstalled.addListener(() => { void chrome.contextMenus.removeAll().then(() => chrome.contextMenus.create({ id: 'task-selection', title: 'Tabby: Create task', contexts: ['selection'] })); });
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== 'task-selection' || !tab?.id) return;
   void chrome.sidePanel.open({ windowId: tab.windowId });

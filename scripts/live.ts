@@ -12,7 +12,7 @@ try {
     { title: 'Untitled', url: 'https://example.com/', text: '' },
   ];
   for (const page of pages) {
-    const result = await provider.run({ kind: 'classify', context: { language: 'ru', goal: 'Изучить авторизацию в React и собрать пример', task: '', page: { ...page, seconds: 9 } } });
+    const result = await provider.run({ kind: 'classify', context: { language: 'en', goal: 'Learn React authentication and build an example', task: '', page: { ...page, seconds: 9 } } });
     (report.checks as unknown[]).push({ input: page, ...result });
   }
   report.live = true;

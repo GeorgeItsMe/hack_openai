@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { Provider, chooseModel, parseOutput, verifiedDeadline } from '../src/server/provider';
 import type { AIRequest } from '../src/shared/schemas';
 // These are protocol fixtures, not live model outputs.
-const model = { id: 'test-gpt-6-astra', title: 'GPT-6 Astra fixture', deprecated: false };
+const model = { id: 'deepseek-v3.2', title: 'DeepSeek 3.2 fixture', deprecated: false };
 const context: AIRequest['context'] = { language: 'en', goal: 'React auth', task: '', page: { title: 'React authentication', url: 'https://example.com', seconds: 8 } };
 const assessment = { category: 'aligned', reason: 'Fixture: matches React goal', nextStep: 'Build a login form.' };
 const config = { key: 'fixture-provider-secret-do-not-bundle', baseUrl: 'https://fixture.invalid/v1', model: '' };
-test('discovers exact Astra catalog ID and refuses missing/ambiguous/deprecated models', () => {
+test('selects the approved low-cost DeepSeek ID and refuses missing/duplicate/deprecated models', () => {
   assert.equal(chooseModel([model], '').id, model.id);
-  assert.throws(() => chooseModel([{ id: 'gpt-other' }], ''), /ASTRA_NOT_FOUND/);
-  assert.throws(() => chooseModel([model, { ...model, id: 'another-gpt-6-astra' }], ''), /ASTRA_NOT_FOUND/);
+  assert.throws(() => chooseModel([{ id: 'gpt-other' }], ''), /MODEL_UNAVAILABLE/);
+  assert.throws(() => chooseModel([model, { ...model }], ''), /MODEL_UNAVAILABLE/);
   assert.throws(() => chooseModel([{ ...model, deprecated: true }], ''), /MODEL_DEPRECATED/);
   assert.throws(() => chooseModel([model], 'missing'), /MODEL_UNAVAILABLE/);
 });
@@ -20,7 +20,10 @@ test('raw Authorization, only documented chat parameters, valid structured JSON 
   const result = await new Provider(config, fetcher).run({ kind: 'classify', context });
   assert.deepEqual(result.result, assessment); assert.equal(result.usage.total_cost, 0.05);
   assert.equal((calls[1].options?.headers as Record<string, string>).Authorization, config.key);
-  assert.deepEqual(Object.keys(JSON.parse(String(calls[1].options?.body))).sort(), ['messages', 'model']);
+  assert.deepEqual(Object.keys(JSON.parse(String(calls[1].options?.body))).sort(), ['max_tokens', 'messages', 'model', 'reasoning_effort']);
+  assert.equal(JSON.parse(String(calls[1].options?.body)).reasoning_effort, 'none');
+  assert.equal(JSON.parse(String(calls[1].options?.body)).max_tokens, 600);
+  assert.match(JSON.parse(String(calls[1].options?.body)).messages[0].content, /Always respond in English/);
 });
 test('no key is an explicit offline state, with no requests', async () => {
   let calls = 0; const p = new Provider({ ...config, key: '' }, async () => { calls++; return Response.json({}); });
@@ -57,4 +60,8 @@ test('deadline matches an absolute date in source, never an unrelated number or 
   assert.equal(verifiedDeadline('2026-10-01', 'by October 1, 2026', 'Finish by October 1, 2026'), true);
   assert.equal(verifiedDeadline('2026-10-01', 'до 1 октября 2026', 'Сдать до 1 октября 2026'), true);
   assert.equal(verifiedDeadline('2026-02-31', '2026-02-31', '2026-02-31'), false);
+});
+test('provider-reported usage is preserved even when malformed output is rejected', async () => {
+  const p = new Provider(config, async url => String(url).endsWith('/models') ? Response.json({ data: [model] }) : Response.json({ choices: [{ message: { content: 'bad json' } }], usage: { total_tokens: 42, total_cost: 0.123 } }));
+  await assert.rejects(p.run({ kind: 'classify', context }), (error: any) => error.code === 'INVALID_AI_JSON' && error.usage.total_tokens === 42 && error.usage.total_cost === 0.123);
 });

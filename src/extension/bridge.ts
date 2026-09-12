@@ -1,10 +1,10 @@
-import { initialState, type AppState, type Task } from '../shared/types';
+import { initialState, normalizeLanguage, type AppState, type Task } from '../shared/types';
 import { createSession, settle, transition, event } from '../shared/engine';
 import { cleanUrl } from '../shared/privacy';
 export const isExtension = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
 let preview: AppState;
-function readPreview() { if (!preview) { try { preview = JSON.parse(localStorage.getItem('focustab-preview') || 'null') || initialState(); } catch { preview = initialState(); } } return preview; }
-function publish() { localStorage.setItem('focustab-preview', JSON.stringify(preview)); window.dispatchEvent(new Event('focus-update')); }
+function readPreview() { if (!preview) { try { preview = JSON.parse(localStorage.getItem('tabby-preview') || localStorage.getItem('focustab-preview') || 'null') || initialState(); } catch { preview = initialState(); } normalizeLanguage(preview); } return preview; }
+function publish() { localStorage.setItem('tabby-preview', JSON.stringify(preview)); window.dispatchEvent(new Event('focus-update')); }
 export async function send(type: string, payload: Record<string, unknown> = {}): Promise<any> {
   if (isExtension) { const r = await chrome.runtime.sendMessage({ type, ...payload }); if (!r?.ok) throw new Error(r?.error || 'CONNECTION_LOST'); return r.data; }
   const state = readPreview(); const s = state.session; if (s) settle(s);
@@ -16,7 +16,7 @@ export async function send(type: string, payload: Record<string, unknown> = {}):
     case 'RESUME': if (s) transition(s, 'running'); break;
     case 'BREAK': if (s) transition(s, 'break', Date.now(), Number(payload.minutes) || state.settings.breakMinutes); break;
     case 'STOP': if (s) transition(s, 'finished'); break;
-    case 'SETTINGS': state.settings = { ...state.settings, ...(payload.settings as object) }; break;
+    case 'SETTINGS': state.settings = { ...state.settings, ...(payload.settings as object), language: 'en' }; break;
     case 'CONFIRM_STEP': if (s) { s.lastConfirmedStep = String(payload.step); event(s, 'confirmed-step', s.lastConfirmedStep); } break;
     case 'SAVE_TASK': {
       const t = payload.task as Task; const old = state.tasks.find(x => x.id === t.id);

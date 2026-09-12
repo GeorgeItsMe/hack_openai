@@ -10,8 +10,8 @@ export function createApp(config: ServerConfig, provider: Pick<Provider, 'run' |
     const send = (status: number, data: unknown) => { if (!res.destroyed) { res.writeHead(status); res.end(JSON.stringify(data)); } };
     if (req.headers.host !== `127.0.0.1:${config.port}` || req.headers.origin !== origin) return send(403, { error: { code: 'EXTENSION_NOT_ALLOWED' } });
     res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin');
-    if (req.method === 'OPTIONS') { res.setHeader('Access-Control-Allow-Methods', 'POST'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-FocusTab-Token'); res.setHeader('Access-Control-Allow-Private-Network', 'true'); res.writeHead(204); res.end(); return; }
-    if (!safeToken(String(req.headers['x-focustab-token'] ?? ''))) return send(401, { error: { code: 'PAIRING_REQUIRED' } });
+    if (req.method === 'OPTIONS') { res.setHeader('Access-Control-Allow-Methods', 'POST'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Tabby-Token'); res.setHeader('Access-Control-Allow-Private-Network', 'true'); res.writeHead(204); res.end(); return; }
+    if (!safeToken(String(req.headers['x-tabby-token'] ?? ''))) return send(401, { error: { code: 'PAIRING_REQUIRED' } });
     if (req.method !== 'POST' || !['/status', '/ai'].includes(req.url ?? '')) return send(404, { error: { code: 'NOT_FOUND' } });
     if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: { code: 'INVALID_REQUEST' } });
     const now = Date.now(); requests = requests.filter(t => now - t < 60000);
@@ -24,7 +24,7 @@ export function createApp(config: ServerConfig, provider: Pick<Provider, 'run' |
       send(200, result);
     } catch (e) {
       const error = e instanceof AppError ? e : new AppError('SERVER_ERROR', 500);
-      send(error.status, { error: { code: error.code, ...(error.available ? { available: error.available.slice(0, 200) } : {}) } });
+      send(error.status, { error: { code: error.code, ...(error.available ? { available: error.available.slice(0, 200) } : {}), ...(error.usage ? { usage: error.usage } : {}) } });
     } finally { active--; }
   });
 }

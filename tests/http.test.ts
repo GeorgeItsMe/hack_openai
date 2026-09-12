@@ -7,7 +7,7 @@ test('loopback proxy rejects websites, missing token, spoofed Host, bad bodies a
   const app = createApp({ port, extensionId: id, pairToken: token }, { status: async () => ({ connected: true, code: 'READY', model: 'fixture', available: [] }), run: async () => { calls++; return { result: {}, model: 'fixture', usage: {} }; } } as any);
   await new Promise<void>(resolve => app.listen(port, '127.0.0.1', resolve));
   const request = (headers: Record<string, string>, path = '/ai', body = '{}') => fetch(`http://127.0.0.1:${port}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body });
-  const valid = { Origin: `chrome-extension://${id}`, 'X-FocusTab-Token': token };
+  const valid = { Origin: `chrome-extension://${id}`, 'X-Tabby-Token': token };
   try {
     assert.equal((await request({ ...valid, Origin: 'https://evil.example' })).status, 403);
     assert.equal((await request({ Origin: valid.Origin })).status, 401);

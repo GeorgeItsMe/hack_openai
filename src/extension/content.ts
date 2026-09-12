@@ -1,11 +1,12 @@
+import catLogo from '../../public/brand/tabby/tabby-mark-task.svg';
 // Runs in Chrome's isolated world. No page-defined callbacks, HTML or code are evaluated.
 (() => {
-  const global = globalThis as typeof globalThis & { __focusTabLoaded?: boolean };
-  if (global.__focusTabLoaded) return; global.__focusTabLoaded = true;
+  const global = globalThis as typeof globalThis & { __tabbyLoaded?: boolean };
+  if (global.__tabbyLoaded) return; global.__tabbyLoaded = true;
   let observer: MutationObserver | undefined; let debounce: ReturnType<typeof setTimeout> | undefined;
   let host: HTMLElement | undefined; let leaseTimer: ReturnType<typeof setInterval> | undefined;
   let expiry = 0; let signature = ''; let readText = false; let observing = false; let lastHref = location.href;
-  const ignored = 'input,textarea,select,option,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="combobox"],script,style,noscript,form,[hidden],[aria-hidden="true"],[data-private],[data-sensitive],#focustab-reminder';
+  const ignored = 'input,textarea,select,option,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="combobox"],script,style,noscript,form,[hidden],[aria-hidden="true"],[data-private],[data-sensitive],#tabby-reminder';
   function visibleText(): string {
     const result: string[] = []; let length = 0;
     // Only rendered prose in the viewport. Never read input values, forms, hidden or editable nodes.
@@ -43,22 +44,22 @@
     document.addEventListener('visibilitychange', changed); window.addEventListener('popstate', changed);
   }
   function remind(message: any) {
-    unblock(); const ru = message.language !== 'en'; expiry = message.expiresAt;
-    host = document.createElement('div'); host.id = 'focustab-reminder';
+    unblock(); expiry = message.expiresAt;
+    host = document.createElement('div'); host.id = 'tabby-reminder';
     host.style.cssText = 'all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none;';
     const shadow = host.attachShadow({ mode: 'closed' });
-    const style = document.createElement('style'); style.textContent = `*{box-sizing:border-box}.wrap{font:15px/1.55 system-ui,sans-serif;color:#233f36;position:fixed;right:24px;bottom:24px;width:min(370px,calc(100vw - 40px));pointer-events:auto;background:#f9faf5;border:1px solid #d6e2d4;box-shadow:0 16px 70px #102b2530;border-radius:22px;padding:24px}.strict{inset:0;width:100%;height:100%;border:0;border-radius:0;display:grid;place-content:center;background:#f1f5edeF;backdrop-filter:blur(7px);padding:max(24px,10vw)}.body{max-width:520px;margin:auto}h2{font-size:26px;line-height:1.15;margin:14px 0}p{color:#557267;margin:12px 0}.brand{font-size:11px;letter-spacing:2px;color:#52764c;font-weight:800}button{font:inherit;background:#274e41;color:white;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;margin:5px 5px 0 0}.light{background:#e4ebdf;color:#274e41}.stop{display:block;background:transparent;color:#654d41;text-decoration:underline;padding-left:0}.note{font-size:12px;color:#6a7c71}`;
+    const style = document.createElement('style'); style.textContent = `*{box-sizing:border-box}.wrap{font:15px/1.55 system-ui,sans-serif;color:#272923;position:fixed;right:24px;bottom:24px;width:min(370px,calc(100vw - 40px));pointer-events:auto;background:#fff8f2;border:1px solid #f3cdb8;box-shadow:0 16px 70px #50301b26;border-radius:22px;padding:24px}.strict{inset:0;width:100%;height:100%;border:0;border-radius:0;display:grid;place-content:center;background:#f6f5f0f2;backdrop-filter:blur(7px);padding:max(24px,10vw)}.body{max-width:520px;margin:auto}h2{font-size:26px;line-height:1.15;margin:14px 0}p{color:#77796f;margin:12px 0}.brand{display:flex;align-items:center;gap:7px;font-size:19px;letter-spacing:-.7px;color:#a54a28;font-weight:800}button{font:inherit;background:#ff7745;color:#272923;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;margin:5px 5px 0 0}.light{background:#ffe2d3;color:#7c3b24}.stop{display:block;background:transparent;color:#654d41;text-decoration:underline;padding-left:0}.note{font-size:12px;color:#77796f}`;
     shadow.append(style);
-    const wrap = document.createElement('div'); wrap.className = message.strict ? 'wrap strict' : 'wrap'; wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-label', 'FocusTab');
+    const wrap = document.createElement('div'); wrap.className = message.strict ? 'wrap strict' : 'wrap'; wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-label', 'Tabby');
     const body = document.createElement('div'); body.className = 'body';
-    const brand = document.createElement('div'); brand.className = 'brand'; brand.textContent = 'FOCUSTAB AI';
-    const title = document.createElement('h2'); title.textContent = ru ? 'Вернёмся к вашей цели?' : 'Back to what matters?';
+    const brand = document.createElement('div'); brand.className = 'brand'; brand.textContent = 'tabby'; const mark = document.createElement('img'); mark.src = catLogo; mark.alt = ''; mark.width = 26; mark.height = 26; brand.prepend(mark);
+    const title = document.createElement('h2'); title.textContent = 'Back to what matters?';
     const goal = document.createElement('strong'); goal.textContent = String(message.goal || '').slice(0, 1000);
     const reason = document.createElement('p'); reason.textContent = String(message.reason || '').slice(0, 600);
     body.append(brand, title, goal, reason);
     const add = (label: string, type: string, className = '') => { const button = document.createElement('button'); button.textContent = label; button.className = className; button.onclick = () => { unblock(); void chrome.runtime.sendMessage({ type, minutes: 5 }).catch(stop); }; body.append(button); };
-    add(ru ? 'Это по делу' : 'This is relevant', 'CORRECT'); add(ru ? 'Перерыв на 5 минут' : '5-minute break', 'BREAK', 'light'); add(ru ? 'Остановить сеанс' : 'Stop session', 'STOP', 'stop');
-    const note = document.createElement('p'); note.className = 'note'; note.textContent = ru ? 'Страница и введённые данные сохранены. Escape — убрать напоминание.' : 'Your page and inputs are preserved. Escape dismisses this reminder.'; body.append(note);
+    add('This is relevant', 'CORRECT'); add('5-minute break', 'BREAK', 'light'); add('Stop session', 'STOP', 'stop');
+    const note = document.createElement('p'); note.className = 'note'; note.textContent = 'Your page and inputs are preserved. Escape dismisses this reminder.'; body.append(note);
     wrap.append(body); shadow.append(wrap); document.documentElement.append(host);
     leaseTimer = setInterval(async () => {
       if (Date.now() >= expiry || location.href !== lastHref) { unblock(); return; }

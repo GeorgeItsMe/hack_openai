@@ -23,7 +23,7 @@ const provider = {
     if (req.kind === 'next') result = { nextStep: 'TEST FIXTURE: add one input.' };
     if (req.kind === 'summary') result = { facts: ['TEST FIXTURE: session events available'], suggestions: ['TEST FIXTURE: review your goal'] };
     if (req.kind === 'task') result = { title: 'Extracted fixture task', steps: ['Review the source'], due: '', dueEvidence: '' };
-    if (req.kind === 'groups') result = { groups: [{ title: 'FocusTab test group', color: 'green', tabIds: req.context.tabs.slice(0, 2).map((t: any) => t.tabId) }] };
+    if (req.kind === 'groups') result = { groups: [{ title: 'Tabby test group', color: 'green', tabIds: req.context.tabs.slice(0, 2).map((t: any) => t.tabId) }] };
     return { result, model: 'TEST FIXTURE — not live Astra', usage: { total_tokens: 12 } };
   },
 };
@@ -35,7 +35,7 @@ const fixture = createServer((req, res) => {
 });
 await new Promise<void>(resolve => api.listen(4318, '127.0.0.1', resolve));
 await new Promise<void>(resolve => fixture.listen(44320, '127.0.0.1', resolve));
-const profile = await mkdtemp(join(tmpdir(), 'focustab-test-'));
+const profile = await mkdtemp(join(tmpdir(), 'tabby-test-'));
 const context = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, viewport: { width: 1440, height: 1150 }, args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`] });
 const logs: string[] = []; const checks: string[] = [];
 const pass = (name: string) => { checks.push(name); console.log('PASS:', name); };
@@ -46,14 +46,14 @@ try {
   await panel.goto(`chrome-extension://${id}/sidepanel.html`);
   const cmd = async (type: string, payload: Record<string, unknown> = {}) => panel.evaluate(async ({ type, payload }) => { const r = await chrome.runtime.sendMessage({ type, ...payload }); if (!r.ok) throw new Error(r.error); return r.data; }, { type, payload });
   const get = (): Promise<AppState> => cmd('GET');
-  await expect(panel.locator('h1')).toHaveText('С чего начнём?');
-  await mkdir('artifacts', { recursive: true }); await panel.screenshot({ path: 'artifacts/focustab-desktop.png', fullPage: true });
-  await panel.setViewportSize({ width: 390, height: 1100 }); await panel.screenshot({ path: 'artifacts/focustab-panel.png', fullPage: true });
+  await expect(panel.locator('h1')).toHaveText('What matters today?');
+  await mkdir('artifacts', { recursive: true }); await panel.screenshot({ path: 'artifacts/tabby-desktop.png', fullPage: true });
+  await panel.setViewportSize({ width: 390, height: 1100 }); await panel.screenshot({ path: 'artifacts/tabby-panel.png', fullPage: true });
   assert.equal(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   pass('unpacked MV3 extension loads; desktop and 390px panel have no horizontal overflow');
-  await panel.getByRole('button', { name: 'Задачи', exact: true }).click(); await panel.getByRole('button', { name: 'Новая задача', exact: true }).click();
-  await panel.getByLabel('Название', { exact: true }).fill('Build React authentication'); await panel.getByLabel('Краткие шаги').fill('Create login form\nConnect test endpoint');
-  await panel.getByRole('button', { name: 'Сохранить задачу', exact: true }).click();
+  await panel.getByRole('button', { name: 'Tasks', exact: true }).click(); await panel.getByRole('button', { name: 'New task', exact: true }).click();
+  await panel.getByLabel('Title', { exact: true }).fill('Build React authentication'); await panel.getByLabel('Short steps').fill('Create login form\nConnect test endpoint');
+  await panel.getByRole('button', { name: 'Save task', exact: true }).click();
   assert.equal((await get()).tasks.length, 1); await panel.reload(); assert.equal((await get()).tasks[0].title, 'Build React authentication');
   pass('task creation through real UI and persistence after panel reload');
   await cmd('SETTINGS', { settings: { pairToken: token, consent: true, readText: true, mode: 'strict' } });
@@ -62,23 +62,23 @@ try {
   const panelOptions = await worker.evaluate(() => chrome.sidePanel.getOptions({}));
   const panelBehavior = await worker.evaluate(() => chrome.sidePanel.getPanelBehavior());
   assert.equal(panelOptions.path, 'sidepanel.html'); assert.equal(panelBehavior.openPanelOnActionClick, true);
-  pass('native Side Panel is configured and opens from extension action');
+  pass('native Side Panel path and extension action behavior are configured');
   const work = await context.newPage(); await work.goto('http://127.0.0.1:44320/watch?video=react'); await work.bringToFront();
   await cmd('START', { goal: 'Build React authentication', taskId: (await get()).tasks[0].id, minutes: 25 });
   await expect.poll(async () => (await get()).assessment?.category, { timeout: 18000 }).toBe('aligned');
   assert.ok(!JSON.stringify(requests).includes('NEVER_SEND')); assert.ok(!JSON.stringify(requests).includes('hello@example.com')); assert.ok(requests.some(r => r.context.page?.text));
   pass('8-second dwell then page assessment using explicit fixture; private form/hidden/editable text excluded');
-  await panel.getByRole('button', { name: 'Фокус', exact: true }).click(); await work.bringToFront(); await panel.screenshot({ path: 'artifacts/focustab-active-panel.png', fullPage: true });
+  await panel.getByRole('button', { name: 'Focus', exact: true }).click(); await work.bringToFront(); await panel.screenshot({ path: 'artifacts/tabby-active-panel.png', fullPage: true });
   const cats = await context.newPage(); await cats.goto('http://127.0.0.1:44320/watch?video=cats'); await cats.bringToFront();
   await expect.poll(async () => (await get()).assessment?.category, { timeout: 18000 }).toBe('distracting');
-  await expect(cats.locator('#focustab-reminder')).toHaveCount(1); await cats.locator('#private').evaluate((el: HTMLInputElement) => { el.value = 'USER_INPUT_RETAINED'; });
+  await expect(cats.locator('#tabby-reminder')).toHaveCount(1); await cats.locator('#private').evaluate((el: HTMLInputElement) => { el.value = 'USER_INPUT_RETAINED'; });
   pass('different videos on one host receive different fixture assessments; strict cover exists');
-  await cmd('CORRECT'); assert.equal((await get()).assessment?.source, 'user'); await expect(cats.locator('#focustab-reminder')).toHaveCount(0); assert.equal(await cats.locator('#private').inputValue(), 'USER_INPUT_RETAINED');
+  await cmd('CORRECT'); assert.equal((await get()).assessment?.source, 'user'); await expect(cats.locator('#tabby-reminder')).toHaveCount(0); assert.equal(await cats.locator('#private').inputValue(), 'USER_INPUT_RETAINED');
   pass('This is relevant corrects exact context and removes cover without losing input');
   await cats.goto('http://127.0.0.1:44320/watch?video=cats-another');
   await expect.poll(async () => (await get()).assessment?.source, { timeout: 18000 }).toBe('ai');
   assert.equal((await get()).assessment?.category, 'distracting');
-  fail = true; await cmd('CONNECT').catch(() => {}); await expect(cats.locator('#focustab-reminder')).toHaveCount(0); fail = false;
+  fail = true; await cmd('CONNECT').catch(() => {}); await expect(cats.locator('#tabby-reminder')).toHaveCount(0); fail = false;
   pass('correction does not authorize another video; server outage releases strict restriction');
   await cmd('CONNECT'); await cmd('RETURN'); await expect.poll(async () => (await get()).page?.title, { timeout: 5000 }).toContain('React'); // Corrected video navigated; skip that now-changed context.
   await work.bringToFront(); await expect.poll(async () => (await get()).assessment?.category, { timeout: 18000 }).toBe('aligned');
@@ -88,7 +88,7 @@ try {
   pass('break, context snapshot, resume and paused timer use persisted timestamps');
   await cmd('RESUME'); await work.bringToFront();
   const unknown = await context.newPage(); await unknown.goto('http://127.0.0.1:44320/unknown'); await unknown.bringToFront();
-  await expect.poll(async () => (await get()).assessment?.category, { timeout: 18000 }).toBe('unknown'); await expect(unknown.locator('#focustab-reminder')).toHaveCount(0);
+  await expect.poll(async () => (await get()).assessment?.category, { timeout: 18000 }).toBe('unknown'); await expect(unknown.locator('#tabby-reminder')).toHaveCount(0);
   pass('ambiguous page remains unclassified and unrestricted');
   const before = requests.length;
   await work.bringToFront(); await cats.bringToFront(); await work.bringToFront(); await panel.waitForTimeout(1200); assert.equal(requests.length, before);
@@ -105,7 +105,7 @@ try {
   await panel.waitForTimeout(200); await assert.rejects(cmd('APPLY_GROUPS'), /TABS_CHANGED/);
   pass('grouping rejects a tab whose context changed after the preview');
   await cmd('AI', { kind: 'groups' }); await cmd('APPLY_GROUPS');
-  const realGroups = await worker.evaluate(() => chrome.tabGroups.query({})); assert.ok(realGroups.some(g => g.title === 'FocusTab test group' && g.color === 'green'));
+  const realGroups = await worker.evaluate(() => chrome.tabGroups.query({})); assert.ok(realGroups.some(g => g.title === 'Tabby test group' && g.color === 'green'));
   pass('task extraction produces editable draft; previewed grouping creates real Chrome groups');
   const dupe = await context.newPage(); await dupe.goto(work.url()); await work.bringToFront(); const tabList = await cmd('LIST_TABS') as Array<{id:number;url:string;active:boolean}>;
   const duplicate = tabList.find(t => t.url === work.url() && !t.active)!; assert.ok(duplicate);
@@ -126,7 +126,7 @@ try {
   const restored = (await get()).session!; assert.ok(restored.remainingMs <= runningBefore && restored.remainingMs > runningBefore - 10000);
   pass('running session also recovers after real worker termination without resetting remaining time');
   await work.close(); await cmd('RETURN').catch(() => {});
-  await cmd('STOP'); assert.equal((await get()).session?.phase, 'finished'); assert.equal(await cats.locator('#focustab-reminder').count(), 0);
+  await cmd('STOP'); assert.equal((await get()).session?.phase, 'finished'); assert.equal(await cats.locator('#tabby-reminder').count(), 0);
   pass('closing work tab is handled; stopping session removes reminders');
   await panel.bringToFront(); await panel.getByRole('button', { name: 'Switch to English' }).click(); await expect(panel.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   await panel.getByRole('button', { name: 'Settings', exact: true }).click(); await expect(panel.getByRole('heading', { name: 'Your focus. Your rules.' })).toBeVisible();

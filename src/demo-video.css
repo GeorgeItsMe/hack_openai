@@ -1,0 +1,9 @@
+.demo-film{padding-top:68px;padding-bottom:28px;scroll-margin-top:40px}
+.demo-film-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:28px;margin-bottom:24px}
+.demo-film-heading h2{font-family:var(--heading);font-size:clamp(26px,2.4vw,38px);font-weight:550;line-height:1.25;letter-spacing:-1.4px;margin-top:13px}
+.demo-film-heading h2 em{font-family:Georgia,serif;font-weight:400;color:#bd633d}
+.demo-film-heading p{font-size:14px;color:#77796f;line-height:1.6;padding-bottom:4px}
+.demo-film video{width:100%;aspect-ratio:16/9;display:block;border:1px solid #dedfd5;border-radius:13px;background:#f6f5f0;box-shadow:0 12px 38px #27292309}
+.demo-film video:focus-visible{outline:3px solid #ff7745;outline-offset:5px}
+.demo-film-caption{display:flex;justify-content:space-between;gap:16px;margin-top:14px;font-size:12px;line-height:1.65;color:#77796f}
+@media(max-width:700px){.demo-film{padding-top:44px}.demo-film-heading{display:block;margin-bottom:18px}.demo-film-heading p{margin-top:12px}.demo-film-caption{display:block}.demo-film-caption span{display:block;margin-top:4px}.demo-film video{border-radius:8px}}

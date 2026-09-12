@@ -1,7 +1,18 @@
+import { initialGoogleState, type ChatState, type GoogleState, type TaskExternal } from './workspace';
 export type Category = 'aligned' | 'distracting' | 'unknown';
 export type Phase = 'running' | 'paused' | 'break' | 'ready' | 'finished';
-export type Language = 'ru' | 'en';
-export interface Task { id: string; title: string; steps: string[]; source: string; due: string; status: 'planned' | 'doing' | 'done'; createdAt: number; completedAt?: number }
+export type Language = 'en';
+
+// Upgrade saved installs without changing user-authored tasks, goals or history.
+export function normalizeLanguage(state: AppState): AppState {
+  const previousLanguage = state.settings.language;
+  state.settings = { ...initialState().settings, ...state.settings, language: 'en' };
+  state.google ??= initialGoogleState();
+  state.chat ??= { messages: [] };
+  if (previousLanguage !== 'en') state.assessment = null;
+  return state;
+}
+export interface Task { id: string; title: string; steps: string[]; source: string; due: string; status: 'planned' | 'doing' | 'done'; createdAt: number; completedAt?: number; external?: TaskExternal }
 export interface PageContext { tabId: number; windowId: number; title: string; url: string; text?: string; key: string; enteredAt: number }
 export interface Assessment { category: Category; reason: string; nextStep: string; source: 'ai' | 'user'; at: number; key: string }
 export interface Totals { aligned: number; distracting: number; unknown: number; break: number; away: number; paused: number }
@@ -21,11 +32,12 @@ export interface AppState {
   page: PageContext | null; assessment: Assessment | null; pendingAt?: number;
   ai: { connected: boolean; code: string; model?: string; at?: number; available?: string[] };
   usage: Usage; taskDraft?: { title: string; steps: string[]; due: string; source: string; selectedText?: string };
+  google: GoogleState; chat: ChatState;
   groupDraft?: Array<{ title: string; color: string; tabIds: number[] }>;
   groupSnapshot?: Record<number, string>;
 }
 export const initialState = (): AppState => ({ version: 1,
-  settings: { language: 'ru', mode: 'soft', readText: false, consent: false, excludedSites: [], breakMinutes: 5, pairToken: '' },
+  settings: { language: 'en', mode: 'soft', readText: false, consent: false, excludedSites: [], breakMinutes: 5, pairToken: '' },
   tasks: [], session: null, history: [], page: null, assessment: null,
-  ai: { connected: false, code: 'AI_NOT_CONNECTED' }, usage: {} });
+  ai: { connected: false, code: 'AI_NOT_CONNECTED' }, usage: {}, google: initialGoogleState(), chat: { messages: [] } });
 export const emptyTotals = (): Totals => ({ aligned: 0, distracting: 0, unknown: 0, break: 0, away: 0, paused: 0 });

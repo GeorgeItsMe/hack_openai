@@ -1,5 +1,5 @@
 {
-  "name": "focustab-ai",
+  "name": "tabby",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --open /focus.html",
-    "preview": "vite preview --host 127.0.0.1",
+    "preview": "node scripts/preview.mjs",
     "build": "tsc -p tsconfig.extension.json --noEmit && node scripts/build.mjs",
     "check": "tsc -p tsconfig.extension.json --noEmit",
     "setup": "node scripts/setup.mjs",
@@ -20,7 +20,10 @@
     "dev:landing": "vite --host 127.0.0.1",
     "check:landing": "tsc -p tsconfig.landing.json --noEmit",
     "build:landing": "npm run check:landing && vite build --outDir dist-landing",
-    "preview:landing": "vite preview --host 127.0.0.1 --outDir dist-landing"
+    "preview:landing": "vite preview --host 127.0.0.1 --outDir dist-landing",
+    "test:smoke": "tsx tests/smoke.ts",
+    "demo": "node scripts/demo.mjs",
+    "package:extension": "npm run build && node scripts/package-extension.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

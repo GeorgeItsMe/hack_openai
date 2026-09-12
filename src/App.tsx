@@ -7,6 +7,7 @@ import {
 import { BrandLogo, Cat, ChromeIcon, Modal, ToolIcon } from './components';
 import { Workspace, useWorkspace } from './Workspace';
 import { ExtraFeatureCards, FeatureExplorer, ExtensionDetails, UpcomingDetails } from './ProductFeatures';
+import { DemoVideo } from './DemoVideo';
 
 const integrations = [
   { name: 'Notion', icon: 'notion' }, { name: 'Gmail', icon: 'gmail' },
@@ -89,6 +90,8 @@ export default function App() {
         </div>
         <div className="under-stage"><span><Leaf size={14} /> A lighter way to work</span><span><ShieldCheck size={14} /> Your peace of mind comes first</span><span><Heart size={14} /> Made for wonderfully busy brains</span></div>
       </section>
+
+      <DemoVideo />
 
       <section className="integrations-section section-wrap reveal" aria-label="Planned integrations"><p>All your favorite tools.<span> Finally on the same page.</span></p><div className="integration-logos">{integrations.map(tool => <div key={tool.icon}><ToolIcon name={tool.icon} size={26} /><span>{tool.name}</span></div>)}</div><span className="integration-caption">Your everyday apps, in our upcoming integrations.</span><div className="integration-future-tools"><span>Also on the roadmap</span><span>TickTick</span><span>Telegram</span><span>WhatsApp</span><span>MCP agents</span></div></section>
 
