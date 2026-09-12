@@ -1,12 +1,11 @@
 import { useId, useState, type KeyboardEvent } from 'react';
 import {
-  ArrowDown, ArrowUpRight, BarChart3, BellOff, Check,
-  CheckCheck, Cloud, Code2, Copy, FileText, FolderOpen,
-  Globe2, Inbox, ListTodo, MessageCircle, MousePointer2, Network,
-  RotateCcw, Search, ShieldCheck, Sparkles, Timer, X,
+  ArrowDown, ArrowUpRight, Check, CheckCheck, Code2, FolderOpen,
+  ListTodo, MousePointer2, Network, RotateCcw, ShieldCheck, Sparkles, X,
 } from 'lucide-react';
 import { Cat, ToolIcon } from './components';
 import './product-features.css';
+import { featureGroups, mcpTools } from './feature-catalog';
 
 export function ExtraFeatureCards({ onExtension }: { onExtension: () => void }) {
   const [context, setContext] = useState<'learning' | 'scrolling'>('learning');
@@ -37,45 +36,16 @@ export function ExtraFeatureCards({ onExtension }: { onExtension: () => void }) 
         <div className="context-bottom"><span><ShieldCheck size={12} /> Your goal gives the page its context.</span><button onClick={onExtension} aria-label="Learn about context-aware focus"><ArrowUpRight size={15} /></button></div>
       </div>
     </article>
+    <article className="feature-card project-feature-card reveal">
+      <div className="feature-copy"><div className="feature-top"><span className="feature-number">07 / KEEP THE PIECES TOGETHER</span><span className="small-pill">DEVELOPER EXTENSION</span></div><h3>Big idea.<br />All the little pieces.</h3><p>Tasks, steps, due dates, notes, and saved links.<br />Give them a project. Pick up where you left off.</p></div>
+      <div className="project-feature-visual" aria-hidden="true"><div className="workspace-example-label">ILLUSTRATED PROJECT</div><div className="project-example-heading"><FolderOpen size={20} /><strong>The next big thing</strong></div><div className="project-example-task"><CheckCheck size={17} /><span>Sketch the first idea<small>Done · Creative work</small></span></div><div className="project-example-task"><ListTodo size={17} /><span>Make something worth sharing<small>In progress · One good step at a time</small></span></div><div className="project-example-footer"><span>2 notes</span><span>3 saved links</span><span>A little headspace</span></div></div>
+    </article>
+    <article className="feature-card mcp-feature-card reveal" id="mcp">
+      <div className="feature-copy"><div className="feature-top"><span className="feature-number">08 / KEEP YOUR ASSISTANT IN THE LOOP</span><span className="small-pill">LOCAL MCP</span></div><h3>Your tasks. Your assistant.<br />Same page.</h3><p>Read real tasks, tabs, and your focus session.<br />Let your assistant create and complete tasks, with permission.</p></div>
+      <div className="mcp-feature-visual"><div className="mcp-connection"><span><Network size={20} />MCP assistant</span><span aria-hidden="true">↔</span><span><Cat size={21} />Tabby</span></div><div className="mcp-capability"><span>READ ACCESS</span><p>Tasks · Tabs · Focus</p></div><div className="mcp-capability"><span>SEPARATE WRITE ACCESS</span><p>Create tasks · Mark done</p></div><button onClick={onExtension}>Five tools. Your choice to connect. <ArrowUpRight size={14} /></button><small>Local client setup required. MCP itself makes no AI calls.</small></div>
+    </article>
   </>;
 }
-
-const featureGroups = [
-  {
-    id: 'extension', label: 'Chrome extension', description: 'Your sidekick alongside your real tabs. AI features work when the extension’s AI connection is set up.',
-    items: [
-      { icon: Sparkles, title: 'Focus that understands your goal', description: 'Assess a page against your task, get a reason, and correct the AI when it misses the point.', tag: 'CONTEXT-AWARE AI' },
-      { icon: BellOff, title: 'Distractions, gently handled', description: 'Choose a soft reminder or a reversible cover. Return to work, take a break, or keep browsing.', tag: 'SOFT & STRICT MODES' },
-      { icon: MousePointer2, title: 'Any selected text → a task', description: 'Capture a passage from a webpage. Ask AI for an editable draft, steps, and a source-backed due date.', tag: 'CAPTURE & REFINE' },
-      { icon: Search, title: 'Find that one open tab', description: 'Search your current tabs by title or address, then jump straight to the page you need.', tag: 'SEARCH & SWITCH' },
-      { icon: FolderOpen, title: 'A space for every project', description: 'Let AI suggest related tabs and group names. Review the suggestion, then create real Chrome groups.', tag: 'SMART TAB GROUPING' },
-      { icon: Copy, title: 'One less duplicate', description: 'Spot tabs with the same full address and choose which extras to close. Keep a copy within reach.', tag: 'DUPLICATE CLEANUP' },
-      { icon: Timer, title: 'Deep work, at your pace', description: 'Set your focus length, pause when you need to, and take a timed break. Your session survives closing the panel.', tag: 'FOCUS & BREAK TIMERS' },
-      { icon: RotateCcw, title: 'Pick up the thread', description: 'Come back to your goal, saved working tabs, and last confirmed step. Ask AI for one next move.', tag: 'RESUME & NEXT-STEP HELP' },
-      { icon: BarChart3, title: 'See where your time went', description: 'Review focus, distractions, breaks, and time away, plus reminders, returns, and an AI session recap.', tag: 'SESSION INSIGHTS' },
-    ],
-  },
-  {
-    id: 'demo', label: 'Try on this page', description: 'No install or account needed. A real little workspace to explore, with your tasks saved in this browser.',
-    items: [
-      { icon: ListTodo, title: 'Get it out of your head', description: 'Add, search, filter, complete, and delete tasks. They stay here when you return to this browser.', tag: 'LOCAL TASK LISTS' },
-      { icon: Timer, title: 'Make a little time', description: 'Try a 5, 25, or 45 minute focus session. Pause, resume, and reset whenever you need to.', tag: 'WORKING FOCUS TIMER' },
-      { icon: FolderOpen, title: 'Try a calmer workspace', description: 'Explore three example tab spaces with working links. Your actual browser tabs stay under your control.', tag: 'EXAMPLE TAB SPACES' },
-      { icon: CheckCheck, title: 'Notice your little wins', description: 'See completed tasks and finished focus sessions reflected in your preview’s progress view.', tag: 'LIVE PREVIEW PROGRESS' },
-    ],
-  },
-  {
-    id: 'roadmap', label: 'Coming next', description: 'A look at what we’re planning. These connections and features are not available in the current preview or extension.',
-    items: [
-      { icon: Inbox, title: 'Tasks that come to you', description: 'Bring tasks from Gmail, Google Calendar, Notion, Linear, Todoist, and TickTick into one connected inbox.', tag: 'AUTOMATIC TASK COLLECTION' },
-      { icon: MessageCircle, title: 'A conversation with your workspace', description: 'Ask questions, talk through a plan, and work with your tasks through an ongoing AI chat.', tag: 'AI CHAT' },
-      { icon: Network, title: 'Your favorite agents, connected', description: 'Use MCP to share task context with AI assistants and coding agents, and keep task statuses in step.', tag: 'MCP & CODING AGENTS' },
-      { icon: Globe2, title: 'Catch the to-dos in the conversation', description: 'Bring actionable messages from Slack, Telegram, and WhatsApp into your task list through connected services.', tag: 'MESSENGER INBOX' },
-      { icon: Cloud, title: 'Your flow, wherever you go', description: 'Keep your tasks, preferences, and saved spaces in sync across your devices.', tag: 'CROSS-DEVICE SYNC' },
-      { icon: FileText, title: 'The bigger picture', description: 'Go beyond a single session with longer-term trends, richer reports, and insights you can take with you.', tag: 'ADVANCED REPORTS' },
-    ],
-  },
-];
 
 export function FeatureExplorer({ onDemo, onExtension }: { onDemo: () => void; onExtension: () => void }) {
   const [selected, setSelected] = useState(0);
@@ -93,15 +63,15 @@ export function FeatureExplorer({ onDemo, onExtension }: { onDemo: () => void; o
   };
   return <section className="feature-explorer section-wrap" id="all-features" aria-labelledby={`${id}-title`}>
     <div className="section-heading reveal"><div><div className="eyebrow"><span>✳</span> SMALL SIDEKICK. BIG TOOLKIT.</div><h2 id={`${id}-title`}>A little help.<br /><span className="serif-word">In all the right places.</span></h2></div><p>From your first to-do to your last open tab.<br />Here’s the whole little world of Tabby.</p></div>
-    <div className="feature-catalog-tabs" role="tablist" aria-label="Explore Tabby features">{featureGroups.map((item, index) => <button key={item.id} role="tab" id={`${id}-tab-${index}`} aria-selected={selected === index} aria-controls={`${id}-panel-${index}`} tabIndex={selected === index ? 0 : -1} onClick={() => setSelected(index)} onKeyDown={event => onKeyDown(event, index)}>{item.label}<span>{item.items.length}</span></button>)}</div>
-    {featureGroups.map((item, index) => <div key={item.id} id={`${id}-panel-${index}`} role="tabpanel" aria-labelledby={`${id}-tab-${index}`} hidden={selected !== index} tabIndex={0}><p className="feature-catalog-description">{item.description}</p><div className="feature-catalog-grid">{item.items.map(feature => <article className="catalog-feature" key={feature.title}><feature.icon size={22} strokeWidth={1.4} /><span>{feature.tag}</span><h3>{feature.title}</h3><p>{feature.description}</p></article>)}</div></div>)}
-    <div className="feature-catalog-footer"><span><ShieldCheck size={15} /> Local by default. Connected AI by choice.</span><button onClick={selected === 1 ? onDemo : onExtension}>{group.id === 'demo' ? 'Make yourself at home' : 'Explore the Chrome extension'}<ArrowUpRight size={15} /></button></div>
+    <div className="feature-catalog-tabs" role="tablist" aria-label="Explore Tabby features">{featureGroups.map((item, index) => <button key={item.id} role="tab" id={`${id}-tab-${index}`} aria-selected={selected === index} aria-controls={`${id}-panel-${index}`} tabIndex={selected === index ? 0 : -1} onClick={() => setSelected(index)} onKeyDown={event => onKeyDown(event, index)}>{item.label}<span>{item.id === 'mcp' ? `${mcpTools.length} tools` : item.items.length}</span></button>)}</div>
+    {featureGroups.map((item, index) => <div key={item.id} id={`${id}-panel-${index}`} role="tabpanel" aria-labelledby={`${id}-tab-${index}`} hidden={selected !== index} tabIndex={0}><p className="feature-catalog-description">{item.description}</p><div className="feature-catalog-grid">{item.items.map(feature => <article className="catalog-feature" key={feature.title}><feature.icon size={22} strokeWidth={1.4} /><span>{feature.tag}</span><h3>{feature.title}</h3><p>{feature.description}</p></article>)}</div>{item.id === 'mcp' && <div className="mcp-tool-list"><h3>The five tools, by name.</h3><dl>{mcpTools.map(tool => <div key={tool.name}><dt><code>{tool.name}</code></dt><dd>{tool.description}</dd></div>)}</dl></div>}{item.id === 'tasks' && <p className="catalog-scope-note">Chrome sync needs the same account and extension on each computer. Delivery between two computers is not yet verified. Reports use the retained session history, capped at 100 previous sessions.</p>}</div>)}
+    <div className="feature-catalog-footer"><span><ShieldCheck size={15} /> Local by default. Connected AI by choice.</span><button onClick={group.id === 'demo' ? onDemo : onExtension}>{group.id === 'demo' ? 'Make yourself at home' : 'Explore the Chrome extension'}<ArrowUpRight size={15} /></button></div>
   </section>;
 }
 
 export function UpcomingDetails({ onDemo }: { onDemo: () => void }) {
   return <>
-    <div className="info-modal-symbol"><Sparkles size={30} /></div><span className="eyebrow">A LITTLE LOOK AHEAD</span><h2>More connected.<br /><span className="serif-word">Still wonderfully you.</span></h2><p>Today’s extension handles focus, tasks, and tabs. These are the next connections we’re planning.</p>
-    <div className="upcoming-details">{featureGroups[2].items.map(feature => <div key={feature.tag}><feature.icon size={18} /><div><strong>{feature.title}</strong><p>{feature.description}</p></div></div>)}</div><div className="upcoming-note"><X size={12} /> These features are not available yet.</div><button className="button button-orange" onClick={onDemo}>Try what’s here today <ArrowUpRight size={17} /></button>
+    <div className="info-modal-symbol"><Sparkles size={30} /></div><span className="eyebrow">A LITTLE LOOK AHEAD</span><h2>More connected.<br /><span className="serif-word">Still wonderfully you.</span></h2><p>The developer extension already includes projects, AI chat, MCP, Chrome workspace sync, and reports. These app connections are still on our wishlist.</p>
+    <div className="upcoming-details">{featureGroups.find(group => group.id === 'roadmap')!.items.map(feature => <div key={feature.tag}><feature.icon size={18} /><div><strong>{feature.title}</strong><p>{feature.description}</p></div></div>)}</div><div className="upcoming-note"><X size={12} /> These features are not available yet.</div><button className="button button-orange" onClick={onDemo}>Try what’s here today <ArrowUpRight size={17} /></button>
   </>;
 }

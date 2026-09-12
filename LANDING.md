@@ -35,7 +35,9 @@ Vercel is configured in `vercel.json` to run `npm run build:landing` and publish
 
 ## Full feature overview
 
-The page presents six primary scenarios: connected task collection, focus sessions, tab organization, session insights, tasks from selected text, and context-aware distraction handling. A keyboard-accessible feature catalog separates the website demo, Chrome extension capabilities, and planned features. The roadmap also covers workspace AI chat, MCP and coding agents, messenger tasks, device sync, and richer reports. See [docs/FEATURES.md](./docs/FEATURES.md) for the capability mapping.
+The page presents eight primary scenarios, including dedicated project-workspace and MCP cards. The feature catalog has six tabs: Tasks & projects (8), Focus & tabs (8), AI & Google (5), MCP (3), Try on this page (4), and Coming next (3). Its 31 entries distinguish the developer extension, setup-dependent Google/AI/MCP connections, the website demo, and remaining roadmap items.
+
+The MCP tab lists all five registered tools by name. FAQ, integration badges, installation instructions, and the Plus roadmap use the same availability boundaries. Google flows have fixture coverage; live account sign-in is not yet verified. Chrome sync storage/merging is verified, but delivery between real computers is not. See [docs/FEATURES.md](./docs/FEATURES.md) for the complete source-to-copy audit.
 
 ## Product scope
 
@@ -50,7 +52,8 @@ Google Fonts is the only external resource loaded by the landing page. The logo,
 - `src/App.tsx`: landing sections and content.
 - `src/Workspace.tsx`: interactive preview and shared state.
 - `src/components.tsx`: logo, icons, and accessible dialog.
-- `src/InstallationGuide.tsx`, `src/installation-guide.css`: installation steps, command copying, and optional AI setup.
+- `src/InstallationGuide.tsx`, `src/installation-guide.css`: installation steps, command copying, and optional AI, MCP, Google, and sync setup.
+- `src/feature-catalog.ts`, `src/ProductFeatures.tsx`: audited capability descriptions, the five MCP tools, catalog tabs, and feature illustrations.
 - `src/styles.css`: landing design and responsive layout.
 - `src/workspace.css`: workspace and preview layout.
 - `public/brand/`: supplied Tabby logos, contextual cat variants, service illustrations, and original extension icons (SVG/PNG). Components use these local assets directly.

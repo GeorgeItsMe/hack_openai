@@ -37,6 +37,8 @@
 .install-ai summary::-webkit-details-marker { display: none; }
 .install-ai summary small { margin-top: 0; }
 .install-ai > div { padding-top: 10px; }
+.install-ai + .install-ai { border-top: 0; }
+.install-ai a { text-decoration: underline; text-underline-offset: 3px; color: #526d3b; }
 .install-footer { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 23px; }
 .install-footer > a { display: flex; align-items: center; gap: 6px; color: #667951; font-size: 13px; line-height: 1.6; text-decoration: underline; text-underline-offset: 3px; }
 .install-footer .button { width: 100%; font-size: 13px; white-space: normal; padding-block: 12px; }
