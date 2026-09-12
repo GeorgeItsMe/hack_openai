@@ -1,7 +1,7 @@
 import { useId, useState, type KeyboardEvent } from 'react';
 import {
-  ArrowDown, ArrowRight, ArrowUpRight, BarChart3, BellOff, Check,
-  CheckCheck, CircleHelp, Cloud, Code2, Copy, FileText, FolderOpen,
+  ArrowDown, ArrowUpRight, BarChart3, BellOff, Check,
+  CheckCheck, Cloud, Code2, Copy, FileText, FolderOpen,
   Globe2, Inbox, ListTodo, MessageCircle, MousePointer2, Network,
   RotateCcw, Search, ShieldCheck, Sparkles, Timer, X,
 } from 'lucide-react';
@@ -97,15 +97,6 @@ export function FeatureExplorer({ onDemo, onExtension }: { onDemo: () => void; o
     {featureGroups.map((item, index) => <div key={item.id} id={`${id}-panel-${index}`} role="tabpanel" aria-labelledby={`${id}-tab-${index}`} hidden={selected !== index} tabIndex={0}><p className="feature-catalog-description">{item.description}</p><div className="feature-catalog-grid">{item.items.map(feature => <article className="catalog-feature" key={feature.title}><feature.icon size={22} strokeWidth={1.4} /><span>{feature.tag}</span><h3>{feature.title}</h3><p>{feature.description}</p></article>)}</div></div>)}
     <div className="feature-catalog-footer"><span><ShieldCheck size={15} /> Local by default. Connected AI by choice.</span><button onClick={selected === 1 ? onDemo : onExtension}>{group.id === 'demo' ? 'Make yourself at home' : 'Explore the Chrome extension'}<ArrowUpRight size={15} /></button></div>
   </section>;
-}
-
-export function ExtensionDetails({ onDemo }: { onDemo: () => void }) {
-  return <>
-    <div className="info-modal-symbol"><Cat size={35} variant="workspace" /></div><span className="eyebrow">A SIDEKICK IN YOUR ACTUAL BROWSER</span><h2>Your tabs.<br /><span className="serif-word">A little more together.</span></h2><p>The Chrome extension brings Tabby alongside your work. Tasks and timers are local; contextual focus, task drafts, grouping suggestions, and recaps use a connected AI service.</p>
-    <div className="extension-detail-list"><div><ListTodo size={18} /><span><strong>Make a little room</strong>Tasks, tab search, duplicate cleanup, focus sessions, and breaks.</span></div><div><Sparkles size={18} /><span><strong>Connect a little help</strong>Goal-aware nudges, text-to-task drafts, AI grouping, next steps, and session summaries.</span></div><div><ShieldCheck size={18} /><span><strong>Keep the choice yours</strong>Choose whether to share context. Correct a suggestion or dismiss a distraction cover whenever you need.</span></div></div>
-    <div className="extension-setup-note"><CircleHelp size={17} /><p>This version is installed manually from the project. AI features need the local companion service and your own provider connection.</p></div>
-    <a className="button button-dark" href="https://github.com/GeorgeItsMe/hack_openai#extension-and-local-server" target="_blank" rel="noreferrer">Get the extension & setup steps <ArrowUpRight size={17} /></a><button className="extension-demo-link" onClick={onDemo}>Or try the no-install preview <ArrowRight size={14} /></button>
-  </>;
 }
 
 export function UpcomingDetails({ onDemo }: { onDemo: () => void }) {

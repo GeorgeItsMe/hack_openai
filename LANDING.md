@@ -28,6 +28,8 @@ Vercel is configured in `vercel.json` to run `npm run build:landing` and publish
 - Example tab groups with working external links.
 - Progress view, task counts, and per-project task filters.
 - Workspace modal, keyboard shortcut (Command/Ctrl + K), Escape, focus restoration, and native dialog focus containment.
+- Primary Try buttons open a desktop Chrome installation guide, with source download, build commands, manual loading steps, and optional local AI setup. The guide accurately identifies the source as an active development snapshot; no packaged release or store listing is implied.
+- “See it in action”, “Open your workspace”, and the installation guide's preview button keep the no-install demo available separately.
 - Mobile navigation, responsive layouts, FAQ accordion, roadmap and privacy dialogs.
 - Scroll reveals and subtle animation with reduced-motion support.
 
@@ -48,6 +50,7 @@ Google Fonts is the only external resource loaded by the landing page. The logo,
 - `src/App.tsx`: landing sections and content.
 - `src/Workspace.tsx`: interactive preview and shared state.
 - `src/components.tsx`: logo, icons, and accessible dialog.
+- `src/InstallationGuide.tsx`, `src/installation-guide.css`: installation steps, command copying, and optional AI setup.
 - `src/styles.css`: landing design and responsive layout.
 - `src/workspace.css`: workspace and preview layout.
 - `public/brand/`: supplied Tabby logos, contextual cat variants, service illustrations, and original extension icons (SVG/PNG). Components use these local assets directly.
