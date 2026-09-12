@@ -1,5 +1,12 @@
 # Tabby — project handoff
 
+## Published download — 12 September 2026
+
+- Published **Tabby 1.0.3** to https://tabby-pi.vercel.app/downloads/Tabby.zip. Production deployment: `dpl_Href6qCmWTT5EnJbJsfu4Lnjsj4Z`. ZIP: 319,517 bytes, SHA-256 `42e69bdc9f0f3d5184b8106f6e507ebc4f8b512ec82f41cd9f69ddb3fdbf032b`.
+- The earlier manual deployment above used the landing at `883529d` with only the ZIP refreshed. The subsequent GitHub synchronization publishes the complete verified source and the current 60-second browser demo; Vercel builds the landing from main. Both packaging passes contained byte-identical extension files, differing only in ZIP timestamps. The committed archive preserves the release packaging output and metadata listed above.
+- Verified the production download in a clean Chrome profile: tasks persist, task-based focus starts, native Side Panel opens, narrow layout fits, and no credentials or unexpected network calls are present. Also clicked **Try Tabby → Download Tabby** on the public website and verified the resulting filename, bytes, SHA-256 and metadata. Report: `artifacts/tabby-published-release.json`; screenshot: `artifacts/tabby-published-download.png`.
+- A concurrent packaging pass produced identical extension contents with different ZIP timestamps. Compared every extracted file, then aligned the local public/dist archives and metadata with the exact published archive. AI and external accounts still require their documented companion setup.
+
 ## GitHub source and download synchronization (12 September 2026)
 
 A fresh checkout-equivalent snapshot was installed with `npm ci` and verified with `npm run build`, 48 passing tests in `npm test`, and the landing production build. Separate Chrome checks passed: 23 core scenarios, seven project/MCP scenarios (including all five MCP tools), seven Google/chat scenarios, and five Ambiguous scenarios. Browser integrations use explicit fixtures; this verification made no paid AI calls and did not authorize a real Google or Ambiguous account.
