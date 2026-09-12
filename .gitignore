@@ -1,0 +1,15 @@
+node_modules
+dist-landing
+dist
+*.local
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+.local/
+test-results/
+playwright-report/
+artifacts/
+.vercel/
+*.log

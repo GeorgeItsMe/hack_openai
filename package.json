@@ -1,0 +1,52 @@
+{
+  "name": "focustab-ai",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --open /focus.html",
+    "preview": "vite preview --host 127.0.0.1",
+    "build": "tsc -p tsconfig.extension.json --noEmit && node scripts/build.mjs",
+    "check": "tsc -p tsconfig.extension.json --noEmit",
+    "setup": "node scripts/setup.mjs",
+    "server": "tsx src/server/index.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "test:browser": "tsx tests/browser.ts",
+    "test:live": "tsx scripts/live.ts",
+    "models": "tsx scripts/models.ts",
+    "dev:landing": "vite --host 127.0.0.1",
+    "check:landing": "tsc -p tsconfig.landing.json --noEmit",
+    "build:landing": "npm run check:landing && vite build --outDir dist-landing",
+    "preview:landing": "vite preview --host 127.0.0.1 --outDir dist-landing"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/chrome": "^0.2.9",
+    "@types/node": "^22.20.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.13",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5"
+  },
+  "description": "Context-aware focus sessions, tasks and Chrome tabs",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

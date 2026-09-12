@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/extension", "src/shared", "src/server", "tests", "scripts/*.ts"],
+  "compilerOptions": { "types": ["node", "chrome"], "noUnusedLocals": true, "noUnusedParameters": true }
+}

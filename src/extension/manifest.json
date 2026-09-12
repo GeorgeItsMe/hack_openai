@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "FocusTab AI",
+  "version": "1.0.0",
+  "description": "Спокойный фокус, задачи и вкладки. Контекстная помощь через GPT Tunnel.",
+  "minimum_chrome_version": "120",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwcaq04K/R4NASeISpgbtrNyqHX9xpx2Yt8TC750vze23bqaW0lydW88heuApYb8DNjlhmZ3TCf6j7Qpuoo7UiTMwoo58kdbTbF+RArfes2FjPIW64qLGbXZCHDdyBxa8XwIyXgCRCsn+FL+kDhqfMq2z7jGGueBj207pB3s7wW5e4w/74jX3IPZJjzQ1jl7RjjsOA/Y7t/MuSW+0oV7kfTGOchTqdRuzfhM9vpS9bHceydNHFAnfUJHAAubjP/rjNpCT0E0MjmgFnRA9GmA1OmBAsXKLF+eVwffnJG6nKLP1/vOi5Qx7ynAmW7VEt3b08Le8VphiD1KIIxWGGXsa/wIDAQAB",
+  "permissions": [
+    "storage",
+    "tabs",
+    "sidePanel",
+    "alarms",
+    "idle",
+    "contextMenus",
+    "scripting",
+    "activeTab",
+    "tabGroups"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "worker.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "FocusTab AI"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src http://127.0.0.1:4318; style-src 'self'"
+  }
+}
