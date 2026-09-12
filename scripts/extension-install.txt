@@ -1,4 +1,4 @@
-TABBY — A LITTLE MORE HEADSPACE
+TABBY — YOUR PRODUCTIVITY AGENT
 
 INSTALL IN CHROME
 
@@ -18,11 +18,18 @@ INSTALL IN CHROME
 Click Chrome's puzzle-piece icon, pin Tabby, then click the Tabby cat.
 Click Enable AI once to use the included DeepSeek assistance. No account, API key
 or local server is needed. Review the short data disclosure before enabling it.
-Add your first task or start a focus session. You're in.
+Enter a goal in Mission, choose Plan my mission, review the steps, then click
+Start this plan. Mark each step done as you finish; use I’m stuck for a smaller
+next action. Tasks, tab groups, focus and progress are saved automatically.
 
 KEEP THE FOLDER
 Chrome loads Tabby from this folder. Keep it in the same place after installing.
 If you see a manifest error, choose the inner folder that contains manifest.json.
+
+UPDATING TABBY
+Replace the files in the same installed Tabby folder with this ZIP's contents.
+Open chrome://extensions and click the reload arrow on Tabby, then reopen
+the side panel. Keep the extension installed to preserve tasks and settings.
 
 WHAT'S READY
 Tasks, projects, notes, saved links, tab search, duplicate cleanup and timers.

@@ -17,7 +17,7 @@ test('compiled cloud function imports in plain Node ESM without a TypeScript loa
   try {
     await writeFile(join(temp, 'package.json'), '{"type":"module"}');
     await symlink(resolve('node_modules'), join(temp, 'node_modules'), 'dir');
-    for (const file of ['api/tabby.ts', 'src/server/cloud.ts', 'src/server/provider.ts', 'src/shared/cloud.ts', 'src/shared/schemas.ts', 'src/shared/privacy.ts', 'src/shared/workspace.ts']) {
+    for (const file of ['api/tabby.ts', 'src/server/cloud.ts', 'src/server/provider.ts', 'src/shared/cloud.ts', 'src/shared/schemas.ts', 'src/shared/mission-schema.ts', 'src/shared/privacy.ts', 'src/shared/workspace.ts']) {
       const output = join(temp, file.replace(/\.ts$/, '.js')); await mkdir(dirname(output), { recursive: true });
       const compiled = ts.transpileModule(await readFile(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
       await writeFile(output, compiled.outputText);

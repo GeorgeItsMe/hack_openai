@@ -1,5 +1,6 @@
 import { initialAmbiguous, type AmbiguousState, type AmbiguousSource } from './ambiguous';
 import { initialGoogleState, type ChatState, type GoogleState, type TaskExternal } from './workspace';
+import { initialMissions, type MissionState } from './missions';
 export type Category = 'aligned' | 'distracting' | 'unknown';
 export type Phase = 'running' | 'paused' | 'break' | 'ready' | 'finished';
 export type Language = 'en';
@@ -15,6 +16,7 @@ export function normalizeLanguage(state: AppState): AppState {
   if (state.ambiguous.report?.state === 'sending') { state.ambiguous.report.state = 'unknown'; const session = [state.session, ...state.history].find(s => s?.id === state.ambiguous.report?.sessionId); if (session) session.ambiguousReport = { state: 'unknown' }; }
   state.google ??= initialGoogleState();
   state.chat ??= { messages: [] };
+  state.missions ??= initialMissions();
   if (previousLanguage !== 'en') state.assessment = null;
   return state;
 }
@@ -27,6 +29,7 @@ export interface Assessment { category: Category; reason: string; nextStep: stri
 export interface Totals { aligned: number; distracting: number; unknown: number; break: number; away: number; paused: number }
 export interface Session {
   id: string; goal: string; taskId: string; projectId?: string; phase: Phase; revision: number;
+  missionId?: string;
   ambiguous?: AmbiguousSource; ambiguousReport?: { state: 'sent' | 'unknown'; messageId?: string };
   startedAt: number; endedAt?: number; accountedAt: number; remainingMs: number; durationMs: number;
   breakUntil?: number; away: boolean; category: Category; totals: Totals;
@@ -47,6 +50,7 @@ export interface AppState {
   usage: Usage; taskDraft?: { title: string; steps: string[]; due: string; source: string; selectedText?: string; external?: TaskExternal; ambiguous?: AmbiguousSource };
   ambiguous: AmbiguousState;
   google: GoogleState; chat: ChatState;
+  missions: MissionState;
   groupDraft?: Array<{ title: string; color: string; tabIds: number[] }>;
   groupSnapshot?: Record<number, string>;
 }
@@ -54,5 +58,5 @@ export const initialState = (): AppState => ({ version: 1,
   settings: { language: 'en', mode: 'soft', readText: false, consent: false, excludedSites: [], breakMinutes: 5, pairToken: '', aiMode: 'cloud', mcpEnabled: false, mcpWriteEnabled: false, mcpToken: '', syncEnabled: false },
   projects: [], notes: [], pinnedTabs: [], mcpReceipts: [], sync: { code: 'SYNC_OFF' },
   tasks: [], session: null, history: [], page: null, assessment: null,
-  ai: { connected: false, code: 'AI_NOT_CONNECTED' }, usage: {}, ambiguous: initialAmbiguous(), google: initialGoogleState(), chat: { messages: [] } });
+  ai: { connected: false, code: 'AI_NOT_CONNECTED' }, usage: {}, ambiguous: initialAmbiguous(), google: initialGoogleState(), chat: { messages: [] }, missions: initialMissions() });
 export const emptyTotals = (): Totals => ({ aligned: 0, distracting: 0, unknown: 0, break: 0, away: 0, paused: 0 });

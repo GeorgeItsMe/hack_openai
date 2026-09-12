@@ -10,6 +10,8 @@ import { assessmentSchema, groupSchema, nextSchema, summarySchema, taskSchema, t
 import { workspaceCommands } from './workspace-worker';
 import { googleLink } from '../shared/workspace';
 import { apiTarget } from './ai-transport';
+import { missionCommands } from './mission-worker';
+import { missionLog, syncMissionProgress } from '../shared/missions';
 
 let state: AppState; let queue: Promise<unknown> = Promise.resolve(); let timer: ReturnType<typeof setTimeout> | undefined;
 let generation = 0; let controller: AbortController | undefined;
@@ -20,6 +22,11 @@ const workspace = workspaceCommands({ state: () => state, serial, save, api, add
   await alarms(); void observe(true);
 } });
 const ambiguous = ambiguousCommands({ state: () => state, serial, save, api });
+const missions = missionCommands({ state: () => state, serial, save, api, addUsage, changed: async () => {
+  invalidate(); await stopScripts();
+  if (state.session?.phase === 'running') state.session.away = await chrome.idle.queryState(60) !== 'active' || !(await chrome.windows.getLastFocused()).focused;
+  await alarms(); void observe(true);
+} });
 const ready = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }).then(async () => {
   const stored = (await chrome.storage.local.get('app')).app as AppState | undefined;
   state = stored?.version === 1 ? stored : initialState();
@@ -28,6 +35,7 @@ const ready = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEX
   state.pendingAt = undefined;
   if (state.ai.code === 'ANALYZING') state.ai.code = state.ai.connected ? 'READY' : 'AI_NOT_CONNECTED';
   workspace.resetPending();
+  missions.resetPending();
   if (state.session && state.session.phase !== 'finished') {
     const s = state.session;
     // After an unobserved long sleep, do not attribute the gap to a website.
@@ -43,7 +51,12 @@ const ready = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEX
 function serial<T>(fn: () => Promise<T> | T): Promise<T> {
   const next = queue.then(() => ready).then(fn); queue = next.catch(() => {}); return next;
 }
-async function save() { await chrome.storage.local.set({ app: state }); }
+async function save() {
+  const missionChanged = syncMissionProgress(state);
+  if (missionChanged) { missions.invalidate(); invalidate(); await stopScripts(); await alarms(); }
+  await chrome.storage.local.set({ app: state });
+  if (missionChanged) void observe(true);
+}
 function invalidate() {
   generation++; controller?.abort(); controller = undefined; clearTimeout(timer);
   if (state) {
@@ -127,6 +140,7 @@ async function applyAssessment(a: Assessment) {
   if (!observing() || !state.page) return;
   const s = state.session!; settle(s); if (!observing()) return;
   state.assessment = a; state.pendingAt = undefined; s.category = a.category;
+  missions.recordAssessment(a);
   if (a.category === 'aligned') {
     s.workTabs = [{ tabId: state.page.tabId, title: state.page.title, url: state.page.url, key: state.page.key }, ...s.workTabs.filter(t => t.tabId !== state.page!.tabId)].slice(0, 30);
   }
@@ -167,7 +181,9 @@ async function returnToWork() {
     try { const tab = await chrome.tabs.get(work.tabId); if (!permitted(tab.url || '') || cleanUrl(tab.url || '') !== work.url) continue;
       const currentPage = await readPage(tab, state.settings.consent && state.settings.readText);
       if (currentPage.key !== work.key) continue;
-      await chrome.windows.update(tab.windowId, { focused: true }); await chrome.tabs.update(tab.id!, { active: true }); s.returns++; event(s, 'return', work.title); await save(); return;
+      await chrome.windows.update(tab.windowId, { focused: true }); await chrome.tabs.update(tab.id!, { active: true }); s.returns++; event(s, 'return', work.title);
+      if (s.missionId === state.missions.current?.id) missionLog(state, 'Returned to a work tab', work.title);
+      await save(); return;
     } catch { /* Closed tab: try the next known work tab, never reopen or redirect automatically. */ }
   }
   throw new Error('WORK_TAB_CLOSED');
@@ -212,6 +228,7 @@ async function runAI(kind: AIRequest['kind']) {
   } catch (e) { if ((e as Error).message !== 'STALE_RESPONSE') await serial(() => failure(e)); throw e; }
 }
 async function command(message: any) {
+  if (typeof message.type === 'string' && message.type.startsWith('MISSION_')) { const result = await missions.handle(message); scheduleSync(); return result; }
   if (typeof message.type === 'string' && message.type.startsWith('AMBIGUOUS_')) return ambiguous.handle(message);
   if (typeof message.type === 'string' && (message.type.startsWith('GOOGLE_') || message.type.startsWith('CHAT_'))) { const result = await workspace.handle(message); scheduleSync(); return result; }
   if (message.type === 'AI') return runAI(message.kind);
@@ -232,6 +249,7 @@ async function command(message: any) {
         state.session.away = await chrome.idle.queryState(60) !== 'active' || !(await chrome.windows.getLastFocused()).focused;
         state.page = null; state.assessment = null; cache.clear(); break;
       case 'GOAL':
+        if (s && s.phase !== 'finished' && typeof message.goal === 'string' && message.goal.trim() && message.goal.length <= 1000) delete s.missionId;
         if (s && s.phase !== 'finished' && typeof message.goal === 'string' && message.goal.trim() && message.goal.length <= 1000) { s.goal = message.goal.trim(); s.taskId = String(message.taskId || ''); s.projectId = state.tasks.find(t => t.id === s.taskId)?.projectId; s.ambiguous = state.tasks.find(t => t.id === s.taskId)?.ambiguous; s.revision++; s.category = 'unknown'; s.corrections = {}; s.workTabs = []; s.lastConfirmedStep = ''; state.assessment = null; event(s, 'goal-changed'); } break;
       case 'PAUSE': if (s) transition(s, 'paused'); break;
       case 'RESUME':
@@ -251,6 +269,7 @@ async function command(message: any) {
       case 'CONFIRM_STEP': if (s) { s.lastConfirmedStep = String(message.step || '').slice(0, 600); event(s, 'confirmed-step', s.lastConfirmedStep); } break;
       case 'SETTINGS': {
         workspace.invalidate();
+        missions.invalidate();
         const x = message.settings || {};
         state.settings.language = 'en';
         if (['soft', 'strict'].includes(x.mode)) state.settings.mode = x.mode;
@@ -351,6 +370,7 @@ async function command(message: any) {
       }
       case 'CLEAR_DATA':
         ambiguous.invalidate(); workspace.invalidate();
+        missions.invalidate();
         invalidate(); for (const request of pendingRequests) request.abort(); await stopScripts(); state = initialState(); cache.clear(); break;
       default: throw new Error('UNKNOWN_COMMAND');
     }

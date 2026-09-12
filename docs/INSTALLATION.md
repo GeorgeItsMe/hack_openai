@@ -6,13 +6,19 @@
 2. **Open Chrome's extensions.** Paste `chrome://extensions` into Chrome's address bar. Turn on **Developer mode** in the top-right corner.
 3. **Choose the Tabby folder.** Click **Load unpacked** in the top-left corner, then select the extracted folder containing `manifest.json`.
 
-Click Chrome's puzzle-piece icon, pin **Tabby**, then click the cat. Add a task or start focusing. Keep the extracted folder in the same place: Chrome loads the extension from it. The ZIP includes these instructions in `INSTALL-TABBY.txt`.
+Click Chrome's puzzle-piece icon, pin **Tabby**, then click the cat. Choose **Enable AI**, enter a goal in **Mission**, and click **Plan my mission → Start this plan**. Keep the extracted folder in the same place: Chrome loads the extension from it. The ZIP includes these instructions in `INSTALL-TABBY.txt`.
 
 This is a manual-install preview for desktop Chrome, not a Chrome Web Store listing. See [Chrome's official loading instructions](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked). A work or school computer may restrict Developer mode.
 
 ## Ready immediately
 
 Tasks, projects, notes, saved links, tab search, duplicate cleanup and timers work without a companion server. AI is included in the hackathon preview. Click **Enable AI** and review the data disclosure; no account, API key or local server is needed. Fair-use limits apply. Google and MCP still use optional local companion setup and the user's own connections. See the [repository setup](../README.md#extension-and-local-server), [MCP](MCP.md), [Google and chat](GOOGLE_AND_CHAT.md), and [workspace sync](PROJECTS_AND_SYNC.md) guides.
+
+## Update an existing installation
+
+Download the latest ZIP and extract it. Replace the files inside the same permanent Tabby folder Chrome already loads. Open `chrome://extensions` and click the reload arrow on Tabby. Reopen its side panel and refresh any webpage that had a reminder. Your extension ID, saved tasks and settings are preserved. Do not remove the extension to update it.
+
+If your earlier setup used a local server, open **Settings → Use included AI** to switch to the hosted version. Hosted users need no server update.
 
 ## Publishing an updated download
 
@@ -28,7 +34,7 @@ npm run build:landing
 
 The packager copies only browser bundles, manifest, four icons and `INSTALL-TABBY.txt`. It writes `dist/Tabby.zip`, the legacy `dist/tabby-extension.zip`, and—with `--landing`—`public/downloads/Tabby.zip` plus `Tabby.json` (version, size and SHA-256). Do not package `.env`, `.local`, provider keys, pairing tokens, server files or a browser profile.
 
-Commit the reviewed ZIP and metadata with the landing update. Vercel serves the ZIP as a static download named **Tabby.zip**; no backend is deployed. Its response forces revalidation so a new download gets the current build.
+Commit the reviewed ZIP and metadata with the landing update. The website serves the ZIP as a static download named **Tabby.zip**. Its separate hosted AI endpoint must support the same request schemas. Its response forces revalidation so a new download gets the current build.
 
 `tests/package-browser.ts` extracts the actual ZIP into a **Tabby** folder, loads it in a fresh Chrome profile, verifies branding and empty credentials, creates/persists a task, starts focus, opens the native Side Panel and checks for unexpected network calls. To verify the published bytes and download headers as well:
 
@@ -36,6 +42,6 @@ Commit the reviewed ZIP and metadata with the landing update. Vercel serves the 
 node --import tsx tests/package-browser.ts https://tabby-pi.vercel.app/downloads/Tabby.zip
 ```
 
-For 1.0.4, TypeScript/build and 57 unit/protocol/runtime tests passed. The published ZIP also passed a real cloud DeepSeek check in a fresh Chrome profile without local setup. Google fixture results are not claims of live account verification. The package browser check itself requires no local server or model calls.
+For 1.0.5, TypeScript/build and 63 unit/protocol/runtime tests passed. The published ZIP also passed a real cloud DeepSeek mission-plan check in a fresh Chrome profile, including an actual tab group and linked tasks, without local setup. Step confirmations in that check were synthetic UI verification. Google fixture results are not claims of live account verification. The package browser check itself requires no local server or model calls.
 
 GitHub Actions checks the freshly built files against the committed ZIP with `scripts/verify-download.mjs`, in addition to type checks, unit tests and the landing build.

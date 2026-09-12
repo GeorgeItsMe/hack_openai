@@ -1,3 +1,4 @@
+import { MissionView } from './mission-view';
 import { AmbiguousView } from './ambiguous-view';
 import { useEffect, useState, type FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -15,13 +16,13 @@ import './panel.css';
 import { CalendarDays, MessageCircle } from 'lucide-react';
 import { ChatPanel, GooglePanel } from './workspace-panels';
 
-type Section = 'ambiguous' | 'focus' | 'projects' | 'tasks' | 'tabs' | 'stats' | 'settings' | 'google' | 'chat';
+type Section = 'mission' | 'ambiguous' | 'focus' | 'projects' | 'tasks' | 'tabs' | 'stats' | 'settings' | 'google' | 'chat';
 type TabItem = { id: number; title: string; url: string; active: boolean; pinned: boolean; groupId: number };
 const time = (ms: number) => `${Math.floor(Math.max(0, ms) / 60000).toString().padStart(2, '0')}:${Math.floor(Math.max(0, ms) / 1000 % 60).toString().padStart(2, '0')}`;
 const minutes = (ms: number) => Math.round(ms / 60000);
-const icons = { ambiguous: MessageCircle, projects: Layers, focus: Focus, tasks: ListTodo, tabs: Layers, stats: BarChart3, settings: Settings2, google: CalendarDays, chat: MessageCircle };
+const icons = { mission: Target, ambiguous: MessageCircle, projects: Layers, focus: Focus, tasks: ListTodo, tabs: Layers, stats: BarChart3, settings: Settings2, google: CalendarDays, chat: MessageCircle };
 function App() {
-  const [state, setState] = useState<AppState>(initialState); const [section, setSection] = useState<Section>('focus');
+  const [state, setState] = useState<AppState>(initialState); const [section, setSection] = useState<Section>('mission');
   const [now, setNow] = useState(Date.now()); const [busy, setBusy] = useState(''); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [goal, setGoal] = useState(''); const [taskId, setTaskId] = useState(''); const [duration, setDuration] = useState(25); const [editGoal, setEditGoal] = useState(false);
   const [editor, setEditor] = useState<Partial<Task> | null>(null); const [tabs, setTabs] = useState<TabItem[]>([]); const [search, setSearch] = useState(''); const [selected, setSelected] = useState<number[]>([]);
@@ -31,7 +32,7 @@ function App() {
   const [siteAccess, setSiteAccess] = useState<boolean | null>(null);
   const s: Session | null = state.session ? settle(structuredClone(state.session), now) : null;
   const active = !!s && s.phase !== 'finished'; const running = s?.phase === 'running';
-  const nav: [Section, string][] = [['focus', 'Focus'], ['tasks', 'Tasks'], ['ambiguous', 'Ambiguous'], ['google', 'Calendar & mail'], ['chat', 'AI chat'], ['projects', 'Projects'], ['tabs', 'Tabs'], ['stats', 'Insights'], ['settings', 'Settings']];
+  const nav: [Section, string][] = [['mission', 'Mission'], ['focus', 'Focus'], ['tasks', 'Tasks'], ['ambiguous', 'Ambiguous'], ['google', 'Calendar & mail'], ['chat', 'AI chat'], ['projects', 'Projects'], ['tabs', 'Tabs'], ['stats', 'Insights'], ['settings', 'Settings']];
   useEffect(() => { const load = () => { void send('GET').then(setState).catch(e => setError(e.message)); }; load(); const unsub = subscribe(load); const tick = setInterval(() => setNow(Date.now()), 1000); return () => { unsub(); clearInterval(tick); }; }, []);
   useEffect(() => { document.documentElement.lang = 'en'; }, []);
   useEffect(() => { document.querySelector('nav [aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }, [section]);
@@ -67,14 +68,14 @@ function App() {
   const assessing = running && !s?.away && state.settings.consent && (!!state.pendingAt || state.ai.code === 'ANALYZING');
   const stateLabel = assessment?.category === 'aligned' ? 'On track' : assessment?.category === 'distracting' ? 'Possible distraction' : 'Not enough context';
   const waitingLabel = !state.settings.consent ? 'Analysis off' : !state.ai.connected ? 'AI not connected' : !running || s?.away ? 'Analysis paused' : 'Waiting for page context';
-  const waitingReason = !state.ai.connected ? 'Connect the local server and model for assessments.' : !running ? 'AI is connected. Press Resume to assess the current page.' : s?.away ? 'Analysis will resume when you return to the browser.' : 'Open an available page and stay there for about 8 seconds.';
+  const waitingReason = !state.ai.connected ? 'Enable the included AI in Settings for assessments.' : !running ? 'AI is connected. Press Resume to assess the current page.' : s?.away ? 'Analysis will resume when you return to the browser.' : 'Open an available page and stay there for about 8 seconds.';
   const taskCount = state.tasks.filter(x => x.status !== 'done').length;
   const totalFocus = [...state.history, ...(s ? [s] : [])].reduce((n, x) => n + x.totals.aligned + x.totals.distracting + x.totals.unknown, 0);
   const tabCandidates = tabs.filter(x => !x.active && !x.pinned && /^https?:/.test(x.url) && tabs.some(other => other.url === x.url && other.id !== x.id && (other.active || other.pinned || other.id < x.id)));
   const countDone = state.tasks.filter(x => x.status === 'done').length;
   return <div className={`app-shell ${isExtension ? 'extension' : 'preview'}`}>
     <aside className="sidebar">
-      <a className="brand" href="#" onClick={e => { e.preventDefault(); setSection('focus'); }}><img className="tabby-logo" src={logo} alt="Tabby" width="125" height="36" /></a>
+      <a className="brand" href="#" onClick={e => { e.preventDefault(); setSection('mission'); }}><img className="tabby-logo" src={logo} alt="Tabby" width="125" height="36" /></a>
       <div className="sidebar-label">{'YOUR SPACE'}</div>
       <nav aria-label={'Sections'}>{nav.map(([id, label]) => { const Icon = icons[id]; return <button key={id} className={`nav-item ${section === id ? 'selected' : ''}`} onClick={() => setSection(id)} aria-current={section === id ? 'page' : undefined} title={label}><Icon size={19} /><span>{label}</span>{id === 'tasks' && taskCount > 0 && <small>{taskCount}</small>}{id === 'focus' && running && <i />}</button>; })}</nav>
       <div className="sidebar-bottom"><div className="little-plant" aria-hidden="true"><img src={sidebarCat} width="48" height="48" alt="" /><span>✳</span></div><h3>{'One thing at a time.'}</h3><p>{'Make a little room for what matters.'}</p><div className="local-note"><ShieldCheck size={14} />{'Your data · your control'}</div></div>
@@ -85,8 +86,9 @@ function App() {
         {!isExtension && <div className="preview-note"><span><Focus size={15} />{'Web preview'}</span>{'Timer and tasks are saved here. Install the extension to analyze pages and manage browser tabs.'}</div>}
         {error && <div role="alert" className="alert error"><span>{errorText(error)}</span><button className="icon-button" onClick={() => setError('')} aria-label={'Dismiss'}><X size={16} /></button></div>}
         {notice && <div role="status" className="alert success"><Check size={16} />{notice}</div>}
+        {(section === 'mission' || section === 'focus') && isExtension && !state.settings.consent && <section className="card ai-welcome"><div className="kicker"><Sparkles size={16} />AI INCLUDED</div><h2>Your sidekick is ready.</h2><p>No account, API key or local server needed.</p><p className="ai-disclosure">{aiDisclosure}</p><button className="btn primary" disabled={!!busy} onClick={enableAI}><Sparkles size={16} />Enable AI</button></section>}
+        {section === 'mission' && <MissionView state={state} session={s} busy={busy} enabled={isExtension} act={act} onFocus={() => setSection('focus')} />}
         {section === 'focus' && <>
-          {isExtension && !state.settings.consent && <section className="card ai-welcome"><div className="kicker"><Sparkles size={16} />AI INCLUDED</div><h2>Your sidekick is ready.</h2><p>No account, API key or local server needed.</p><p className="ai-disclosure">{aiDisclosure}</p><button className="btn primary" disabled={!!busy} onClick={enableAI}><Sparkles size={16} />Enable AI</button></section>}
           <div className="page-heading"><div><div className="eyebrow"><span />{'LESS NOISE. MORE INTENTION.'}</div><h1>{active ? 'A little room to focus.' : 'What matters today?'}</h1><p>{'One task, a little attention. You’re on your way.'}</p></div><span className="heading-spark" aria-hidden="true">✳</span></div>
           <div className="focus-layout"><div className="focus-main">
             <section className="card timer-card">
@@ -146,7 +148,7 @@ function App() {
         {section === 'chat' && <ChatPanel state={state} busy={!!busy} command={act} openSettings={() => setSection('settings')} enableAI={enableAI} />}
         <footer className="page-footer"><span><img src={cat} width="16" height="16" alt="" />Tabby</span><span>{'Fewer open loops.'} <Leaf size={12} /></span></footer>
       </main>
-      {active && <div className="session-dock"><span><i className={running ? 'pulsing' : ''} /><strong>{time(s!.phase === 'break' ? (s!.breakUntil || now) - now : s!.remainingMs)}</strong><span>{s!.goal}</span></span><button onClick={() => act('STOP')}><Square size={13} />{'Stop session'}</button></div>}
+      {active && !(section === 'mission' && state.missions.current && s!.missionId === state.missions.current.id) && <div className="session-dock"><span><i className={running ? 'pulsing' : ''} /><strong>{time(s!.phase === 'break' ? (s!.breakUntil || now) - now : s!.remainingMs)}</strong><span>{s!.goal}</span></span><button onClick={() => act('STOP')}><Square size={13} />{'Stop session'}</button></div>}
     </div>
   </div>;
 }

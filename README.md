@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Less chaos. More focus.</h1>
-<p align="center">A context-aware Chrome extension for tasks, focus sessions, and a calmer browser.<br><strong>Built as a working hackathon prototype.</strong></p>
+<p align="center">Your personal productivity agent: set a goal, approve a plan, and follow through in your browser.<br><strong>Built as a working hackathon prototype.</strong></p>
 <p align="center"><a href="https://tabby-pi.vercel.app/">Try Tabby</a> · <a href="docs/INSTALLATION.md">Install the extension</a> · <a href="#why-we-built-tabby">The concept</a> · <a href="#what-works">Features</a> · <a href="#development">Development</a></p>
 
 **[Download Tabby.zip](https://tabby-pi.vercel.app/downloads/Tabby.zip)** — ready to install in Chrome. Unzip it, enable Developer mode, then choose Load unpacked and select the Tabby folder. [Three-step guide](docs/INSTALLATION.md). Click **Enable AI** once: DeepSeek is included, with no account, API key or local server needed. Google and MCP are optional advanced connections.
@@ -26,10 +26,19 @@ Tabby keeps that goal close. Start a focus session, let the extension assess the
 
 Tasks, projects, notes, connected tools, and browser tabs support the same idea: keep the next meaningful step close to the work itself. Our ambition is a calmer place to work, where technology helps you spend your attention on what you choose.
 
+## Mission Mode
+
+**Give Tabby a mission.** Describe an outcome and choose a time budget. DeepSeek proposes up to five concrete steps, a finish criterion for each, and relevant tabs from your current window. Review the plan, then click **Start this plan**: Tabby creates linked tasks, optionally groups the selected tabs in orange, and starts focus on the first step.
+
+During work, contextual nudges help you return. **I’m stuck** suggests a smaller next action. **Mark step done** moves focus to the next step without resetting the timer. When every step is confirmed, Tabby saves a completion recap. **Agent activity** shows actual requests, browser actions and confirmations. Time running out keeps the mission incomplete; continue for another 15 minutes when you choose.
+
+This is a bounded agent loop: **goal → structured plan → approved browser actions → observation → assistance → confirmed progress**. Resource searches are suggestions you can open, not background web research. [Architecture, limits and a one-minute demo](docs/MISSIONS.md).
+
 ## What works
 
 | Feature | What you can do today |
 | --- | --- |
+| Mission Mode | Turn a goal into steps, linked tasks and selected tab groups; get unstuck and confirm progress. |
 | Context-aware focus | Compare the active page with your goal; see a reason and a suggested next step. |
 | Gentle reminders | Choose a nudge or a reversible distraction cover. Correct the assessment or stop anytime. |
 | Focus and break timers | Set a duration, pause, resume, and take timed breaks. Closing the panel preserves your session. |
@@ -84,7 +93,7 @@ Leave the server running, then:
 3. Pin **Tabby** and click its icon to open the side panel.
 4. Open **Settings → Connected tools & advanced settings**. Paste `.local/pairing.txt` into **Local server connection token**, then click **Use local AI**. This is a separate connection token, not your provider API key.
 5. Review the data disclosure and enable **Allow AI analysis**. Reading visible page text requires its separate toggle and permission for that site.
-6. Enter a goal and click **Start focusing**. Stay on a relevant page for roughly eight seconds plus model response time, then try another page and inspect the suggestion.
+6. Open **Mission**, enter a goal and choose **Plan my mission → Start this plan**. Or use **Focus → Start focusing** for a simple session. Stay on a relevant page for roughly eight seconds plus model response time, then try another page and inspect the suggestion.
 
 After extension changes, run `npm run build` and click Reload on its card in `chrome://extensions`. Refresh the test webpage when its content script changes. Restart the local server after server or `.env` changes.
 
@@ -125,15 +134,17 @@ flowchart LR
   Panel[React side panel] --> Worker[Chrome MV3 service worker]
   Worker <--> Storage[(Local extension storage)]
   Worker <--> Page[Permission-scoped content script]
-  Worker --> Server[Local Node server]
-  Server --> AI[GPT Tunnel · DeepSeek 3.2]
+  Worker --> Cloud[Tabby Cloud · default]
+  Worker --> Server[Local Node server · optional]
+  Cloud --> AI[GPT Tunnel · DeepSeek 3.2]
+  Server --> AI
 ```
 
 TypeScript handles timing, state, validation, and browser actions. The model supplies structured suggestions. Zod validates the outputs; stale responses are rejected when the page, goal, or session changes. Suggested tab groups are reviewed before they are applied.
 
 ## Data and control
 
-- Your API key stays on the local server. The browser uses a separate pairing token, and the server checks the extension origin.
+- The shared AI key stays in the production server environment. Optional local AI uses its own server key and a separate pairing token. Both routes check the extension origin.
 - AI receives the authorized goal, task, page title, cleaned URL, and relevant session context. Visible text is optional and limited to 4,000 characters.
 - Form values, cookies, and full browsing history are not collected. Site exclusions and analysis controls are available in Settings.
 - Tasks and sessions are stored locally. A distraction cover can be dismissed with Escape; suggestions do not run generated JavaScript.
@@ -146,6 +157,7 @@ The prototype does not transcribe video or audio. Time on a page is an observati
 
 | Command | Purpose |
 | --- | --- |
+| `npm run test:missions` | Verify Mission in real Chromium with explicit model fixtures. |
 | `npm run dev:landing` | Run the landing page and interactive preview locally. |
 | `npm run dev` | Open the extension UI as a web preview. |
 | `npm run build` | Type-check and build the Chrome extension. |
@@ -157,14 +169,15 @@ The prototype does not transcribe video or audio. Time on a page is an observati
 | `npm run test:live` | Run three real, potentially billable model requests. |
 | `npm run models` | Check the model catalog available to your key. |
 
-The current source passes 48 unit/protocol tests. Browser suites cover core focus/tab behavior, workspace/MCP, Google/chat and Ambiguous, with separate native Side Panel and packaged-download checks. External-service fixtures are not live account verification. [Run history and limits](docs/TESTING.md).
+The current source passes 63 unit/protocol/runtime tests. Browser suites cover core focus/tab behavior, workspace/MCP, Google/chat and Ambiguous, with separate native Side Panel and packaged-download checks. External-service fixtures are not live account verification. [Run history and limits](docs/TESTING.md).
 
 GitHub Actions runs the extension build, unit tests, source-to-ZIP comparison and landing build for pushes and pull requests. A stale browser download fails verification rather than silently shipping a different build.
 
 ```text
 src/extension/       Side panel, worker, content script, manifest
 src/shared/          Types, time accounting, privacy, AI schemas
-src/server/          Local HTTP server and model adapter
+src/server/          Hosted/local AI handlers and model adapter
+api/                 Hosted Tabby Cloud endpoint
 src/mcp/             Local stdio MCP server and authenticated browser bridge
 src/App.tsx          Landing page
 src/Workspace.tsx    Interactive website preview

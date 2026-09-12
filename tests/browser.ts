@@ -54,7 +54,8 @@ try {
   await panel.goto(`chrome-extension://${id}/sidepanel.html`);
   const cmd = async (type: string, payload: Record<string, unknown> = {}) => panel.evaluate(async ({ type, payload }) => { const r = await chrome.runtime.sendMessage({ type, ...payload }); if (!r.ok) throw new Error(r.error); return r.data; }, { type, payload });
   const get = (): Promise<AppState> => cmd('GET');
-  await expect(panel.locator('h1')).toHaveText('What matters today?');
+  await expect(panel.locator('h1')).toHaveText('Give Tabby a mission.');
+  await panel.getByRole('button', { name: 'Focus', exact: true }).click();
   await mkdir('artifacts', { recursive: true }); await panel.screenshot({ path: 'artifacts/tabby-desktop.png', fullPage: true });
   await panel.setViewportSize({ width: 390, height: 1100 }); await panel.screenshot({ path: 'artifacts/tabby-panel.png', fullPage: true });
   assert.equal(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);

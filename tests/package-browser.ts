@@ -43,7 +43,8 @@ try {
   browser.on('request', req => { if (/^https?:/.test(req.url())) apiCalls++; });
   const page = await browser.newPage(); page.on('pageerror', error => errors.push(error.message));
   await page.goto(`chrome-extension://${id}/sidepanel.html`);
-  await expect(page.locator('h1')).toHaveText('What matters today?');
+  await expect(page.locator('h1')).toHaveText('Give Tabby a mission.');
+  await page.getByRole('button', { name: 'Focus', exact: true }).click();
   console.log('Tabby panel loaded with a clean profile.');
   assert.equal(await page.evaluate(() => chrome.runtime.getManifest().name), 'Tabby');
   const initial = await page.evaluate(async () => (await chrome.runtime.sendMessage({type:'GET'})).data);

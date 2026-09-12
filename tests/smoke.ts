@@ -11,7 +11,8 @@ const browser = await chromium.launchPersistentContext(profile, { channel: 'chro
 const errors: string[] = [];
 try {
   const page = await browser.newPage(); page.on('pageerror', e => errors.push(e.message));
-  await page.goto(`chrome-extension://${id}/sidepanel.html`); await expect(page.locator('h1')).toHaveText('What matters today?');
+  await page.goto(`chrome-extension://${id}/sidepanel.html`); await expect(page.locator('h1')).toHaveText('Give Tabby a mission.');
+  await page.getByRole('button', { name: 'Focus', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('.language-button')).toHaveCount(0);
   await page.getByLabel('What would you like to focus on?').fill('Learn React authentication and build an example');

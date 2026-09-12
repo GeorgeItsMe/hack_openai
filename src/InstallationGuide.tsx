@@ -50,7 +50,7 @@ export function InstallationGuide({ onDemo }: { onDemo: () => void }) {
     </ol>
 
     <div className="install-ready"><span className="install-ready-icon"><Cat size={25} /></span><div><strong>There’s a new cat in your browser.</strong><p>Click the <Puzzle size={14} aria-label="puzzle-piece" /> extensions icon, pin <strong>Tabby</strong> <Pin size={13} aria-hidden="true" />, then click the cat. Add a task or start your first focus session.</p></div></div>
-    <p className="install-scope">Tasks, projects, notes, saved links, and timers are ready right away. Click Enable AI in Tabby for included DeepSeek assistance. No account, API key or local server needed.</p>
+    <p className="install-scope">Click Enable AI, enter a goal in Mission, then choose Plan my mission. Review the steps and click Start this plan. DeepSeek is included: no account, API key or local server needed.</p>
 
     <details className="install-ai"><summary><FolderOpen size={18} /><span>Need a little help installing?</span></summary><div>
       <p><strong>Can’t see the folder?</strong> Unzip the download first. On Windows, choose Extract All; opening the ZIP alone doesn’t extract it.</p>

@@ -30,7 +30,8 @@
     "test:smoke": "tsx tests/smoke.ts",
     "demo": "node scripts/demo.mjs",
     "package:extension": "npm run build && node scripts/package-extension.mjs",
-    "test:cloud": "tsx tests/cloud-browser.ts"
+    "test:cloud": "tsx tests/cloud-browser.ts",
+    "test:missions": "tsx tests/mission-browser.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
@@ -51,7 +52,7 @@
     "typescript": "~5.7.2",
     "vite": "^6.0.5"
   },
-  "description": "Context-aware focus sessions, tasks and Chrome tabs",
+  "description": "Your productivity agent: goal, plan, focus and confirmed progress",
   "main": "index.js",
   "directories": {
     "doc": "docs",
