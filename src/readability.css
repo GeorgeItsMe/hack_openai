@@ -1,0 +1,195 @@
+/* Keep supporting text legible without scaling the display headings. */
+.hero-copy > p { font-size: 16px; color: #64695d; }
+.section-heading > p, .center-heading > p, .how-heading > p,
+.faq-intro p, .cta-content > p { font-size: 15px; }
+.hero-note, .under-stage, .integration-caption, .integration-future-tools,
+.section-heading > p, .center-heading > p, .how-heading > p,
+.feature-card .feature-copy p, .audience-card p, .step p,
+.pricing-card > p, .pricing-note, .faq-intro p, .faq-answer > p,
+.features-footer, .feature-summary-tags, .feature-catalog-description,
+.catalog-feature > p, .feature-catalog-footer,
+.extension-availability p, .footer-main > div:first-child > p,
+.footer-links > div > span, .footer-bottom { color: #68715e; }
+.deep-work-card .feature-copy p { color: #c6d0bb; }
+.tabs-card .feature-copy p { color: #70677e; }
+.rhythm-card .feature-copy p { color: #776d59; }
+.catalog-feature > span, .audience-label, .feature-number { color: #6a745d; }
+.deep-work-card .feature-number { color: #d0d9c4; }
+.small-pill, .pricing-plan > .small-pill { color: #657150; }
+.feature-top, .pricing-plan { flex-wrap: wrap; }
+.feature-copy .feature-top .small-pill { position: static; }
+.feature-catalog-tabs > button { line-height: 1.5; }
+.feature-catalog-tabs > button > span { font-size: 11px; }
+.feature-catalog-description, .catalog-feature > p, .faq-answer > p { line-height: 1.8; }
+.feature-catalog-footer, .features-footer, .feature-summary-tags,
+.context-example-label, .context-bottom, .visual-chart-title, .chart-note,
+.capture-message > div { flex-wrap: wrap; }
+.context-example-label { line-height: 1.6; }
+.context-example-label > span:last-child { font-size: 10px; }
+.capture-message > div, .capture-result > div > span,
+.context-assessment p, .context-bottom, .feature-text-link { color: #736d59; }
+.context-assessment strong { font-size: 13px; color: #4f6540; }
+.context-assessment.scrolling p { color: #827054; }
+.context-switch > button { color: #61774b; }
+.capture-result strong { font-size: 13px; }
+.capture-check, .collection-cat, .collection-check { flex-shrink: 0; }
+.chart-note > small, .visual-chart-title > span:last-child,
+.visual-bars > div > span { color: #807664; }
+.collection-task > div > span { color: #747d66; }
+.info-modal .modal-interior > p, .privacy-list p,
+.extension-detail-list > div, .extension-setup-note > p,
+.upcoming-details p { color: #677958; line-height: 1.8; }
+.extension-detail-list strong, .upcoming-details strong { color: #4f673c; }
+
+/* Give the interactive preview room for actual reading and clicking. */
+.workspace .dashboard-heading p, .workspace .dashboard-date,
+.workspace .workspace-person small, .workspace .workspace-toolbar,
+.workspace .workspace-help, .workspace .sidebar-label,
+.workspace .sidebar-bottom > span, .workspace .workspace-nav > button,
+.workspace .sidebar-spaces > button, .workspace .task-copy > small,
+.workspace .dashboard-stats > div > span, .workspace .dashboard-stats small,
+.workspace .stat-caption, .workspace .task-panel-footer,
+.workspace .workspace-footer, .workspace .timer-reset,
+.workspace .preview-note, .workspace .rhythm-header p,
+.workspace .rhythm-totals > p, .workspace .rhythm-totals > p > strong,
+.workspace .rhythm-message, .workspace .tab-space-heading small,
+.workspace .tab-space-links > a > span small { color: #6b7b59; }
+.workspace .task-copy > span { color: #526642; }
+.workspace .task-row.done .task-copy > span { color: #80916d; }
+.workspace .task-filters > div > button { color: #6a7e55; }
+.workspace .task-filters > div > button.active { color: #4c6636; }
+.workspace .add-task-button { color: #617f45; }
+.workspace .focus-heading, .workspace .focus-panel > p { color: #806742; }
+.workspace .task-search input::placeholder,
+.workspace .add-task-form > input::placeholder { color: #7a8d66; }
+.workspace .task-search input { color: #4f683a; }
+.workspace .workspace-toolbar { min-height: 44px; height: auto; padding-block: 10px; }
+.workspace .workspace-content { padding-top: 24px; }
+.workspace .workspace-person { align-items: flex-start; }
+.workspace .workspace-person small { line-height: 1.5; }
+.workspace .workspace-person > svg { display: none; }
+.workspace .dashboard-heading p { line-height: 1.7; }
+.workspace .dashboard-stats > div { min-width: 0; }
+.workspace .dashboard-stats > div > span { line-height: 1.5; }
+.workspace .dashboard-stats strong { flex-wrap: wrap; }
+.workspace .panel-heading { padding: 14px 13px 12px; align-items: flex-start; }
+.workspace .panel-heading h4 { line-height: 1.5; }
+.workspace .task-filters { flex-wrap: wrap; gap: 8px; padding: 0 12px 10px; }
+.workspace .task-filters > div > button { padding: 6px; }
+.workspace .task-search { max-width: 100px; gap: 4px; }
+.workspace .task-search input { width: 78px; font-size: 12px; }
+.workspace .task-search > svg { width: 13px; height: 13px; }
+.workspace .task-row { min-height: 60px; padding: 12px; gap: 9px; }
+.workspace .task-check { width: 18px; height: 18px; border-radius: 5px; }
+.workspace .task-check > svg { width: 11px; height: 11px; }
+.workspace .task-row > .tool-icon { width: 20px !important; height: 20px !important; }
+.workspace .task-copy > small { flex-wrap: wrap; line-height: 1.5; }
+.workspace .add-task-button { padding: 14px 12px; gap: 7px; }
+.workspace .add-task-button > svg { width: 14px; height: 14px; }
+.workspace .task-panel-footer { flex-wrap: wrap; gap: 8px; padding: 11px 12px; line-height: 1.5; }
+.workspace .focus-start { min-height: 40px; justify-content: center; gap: 8px; padding: 10px 8px; }
+.workspace .focus-start > svg { width: 12px; height: 12px; }
+.workspace .focus-start > span { display: none; }
+.workspace .focus-panel > p { line-height: 1.6; max-width: none; }
+.workspace .timer-reset { min-height: 32px; margin-top: 6px; }
+.workspace .workspace-footer { flex-wrap: wrap; line-height: 1.6; }
+.workspace .add-task-form { padding: 10px; gap: 8px; }
+.workspace .add-task-form > input { font-size: 14px; padding: 9px 7px; }
+.workspace .add-task-form > button { width: 28px; height: 32px; }
+.workspace .add-task-form > button > svg { width: 17px; height: 17px; }
+.workspace .rhythm-header { flex-wrap: wrap; }
+.workspace .rhythm-totals > p { line-height: 1.6; }
+
+@media (max-width: 1100px) {
+  .workspace .workspace-sidebar { width: 165px; }
+  .workspace .dashboard-columns { grid-template-columns: minmax(0, 1fr) 190px; }
+  .workspace .workspace-nav > button { padding-inline: 7px; gap: 7px; }
+  .workspace .workspace-toolbar > span > span { display: none; }
+  .footer-main { gap: 40px; }
+  .footer-links { gap: 30px; }
+}
+
+@media (max-width: 850px) {
+  .workspace .dashboard-columns { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .workspace .focus-panel { display: grid; grid-template-columns: 62px minmax(0, 1fr); column-gap: 16px; align-items: center; padding: 15px 17px; }
+  .workspace .focus-heading { grid-column: 1 / -1; margin-bottom: 10px; }
+  .workspace .focus-heading > .icon-button { width: 26px; height: 26px; }
+  .workspace .focus-heading > .icon-button > svg { width: 16px; height: 16px; }
+  .workspace .focus-cat { grid-column: 1; grid-row: 2 / 4; margin: 0; text-align: center; }
+  .workspace .focus-cat > svg { width: 49px; height: 49px; }
+  .workspace .focus-time { grid-column: 2; grid-row: 2; font-size: 41px; margin: 0; }
+  .workspace .focus-panel > p { grid-column: 2; grid-row: 3; margin-top: 4px; text-align: left; }
+  .workspace .focus-start, .workspace .timer-reset { grid-column: 1 / -1; }
+  .workspace .focus-start { margin-top: 16px; }
+  .workspace .timer-options { top: 48px; left: 90px; right: 15px; padding: 5px; gap: 4px; }
+  .workspace .timer-options > button { font-size: 12px; padding: 8px; }
+  .workspace .rhythm-body { flex-direction: column; gap: 24px; }
+  .workspace .rhythm-totals { width: 100%; }
+  .feature-card .feature-copy p br, .section-heading > p br, .step p br { display: initial; }
+  .feature-card .feature-copy p { max-width: 460px; }
+  .feature-top { gap: 10px; }
+  .footer-links { gap: 24px; }
+}
+
+@media (max-width: 600px) {
+  .announcement { gap: 8px; padding: 9px 12px; font-size: 11px; line-height: 1.5; }
+  .announcement { flex-wrap: wrap; }
+  .announcement > button { font-size: 11px; flex-shrink: 0; margin-left: 0; }
+  .hero-copy > p { font-size: 15px; }
+  .hero-note { flex-wrap: wrap; gap: 5px; font-size: 11px; line-height: 1.6; }
+  .hero-buttons { gap: 5px; }
+  .hero-buttons .button { min-height: 46px; font-size: 12px; gap: 7px; padding-inline: 12px; }
+  .hero-buttons .button > svg:last-child:not(:first-child) { margin-left: 0; }
+  .stage-topline, .stage-bottomline { height: auto; min-height: 48px; padding-block: 12px; gap: 12px; flex-wrap: wrap; line-height: 1.6; }
+  .stage-topline > span { font-size: 10px; }
+  .stage-topline { justify-content: center; }
+  .stage-bottomline { justify-content: center; }
+  .stage-bottomline > span { font-size: 11px; }
+  .under-stage { flex-wrap: wrap; gap: 12px 20px; line-height: 1.6; }
+  .workspace .workspace-sidebar { width: auto; padding: 10px; }
+  .workspace .browser-tab { width: 152px; white-space: nowrap; }
+  .workspace .workspace-nav > button { width: 36px; height: 34px; padding: 0; gap: 0; }
+  .workspace .workspace-nav > button > svg { width: 17px; height: 17px; }
+  .workspace .workspace-toolbar { font-size: 10px; padding-inline: 12px; gap: 8px; }
+  .workspace .live-label { font-size: 10px; }
+  .workspace .workspace-toolbar > div { gap: 6px; }
+  .workspace .toolbar-avatar { width: 22px; height: 22px; }
+  .workspace .workspace-content { padding: 20px 12px 0; }
+  .workspace .dashboard-sparkle { display: none; }
+  .workspace .dashboard-stats { gap: 6px; }
+  .workspace .dashboard-stats > div { padding: 10px 7px; }
+  .workspace .dashboard-stats > div > span { font-size: 10px; min-height: 30px; align-items: flex-start; }
+  .workspace .dashboard-stats > div > span > svg { display: none; }
+  .workspace .dashboard-stats small { font-size: 10px; }
+  .workspace .task-search input, .workspace .add-task-form > input { font-size: 16px; }
+  .workspace .task-search { max-width: 112px; }
+  .workspace .task-search input { width: 90px; }
+  .workspace .tab-spaces-grid { grid-template-columns: 1fr; }
+  .workspace .rhythm-header p { max-width: none; }
+  .feature-catalog-tabs { flex-wrap: wrap; }
+  .feature-catalog-tabs > button { font-size: 12px; flex: 1 1 auto; gap: 6px; padding: 10px; }
+  .feature-catalog-tabs > button > span { font-size: 10px; }
+  .feature-catalog-footer { align-items: flex-start; }
+  .features-footer { flex-direction: column; align-items: center; line-height: 1.6; }
+  .context-example-label > span:last-child { font-size: 10px; }
+  .feature-summary-tags { font-size: 12px; }
+  .pricing-card li { line-height: 1.6; align-items: flex-start; }
+  .pricing-card li > svg { margin-top: 4px; }
+  .pricing-card > p, .pricing-note { line-height: 1.7; }
+  .footer-main { gap: 30px; }
+  .footer-links { gap: 28px 20px; }
+  .footer-links a, .footer-links button { font-size: 13px; line-height: 1.5; }
+  .footer-bottom { flex-wrap: wrap; font-size: 11px; line-height: 1.7; }
+  .faq-cat { right: 18px; }
+}
+
+/* Keep the little jokes visible on smaller screens, too. */
+@media (max-width: 850px) {
+  .footer-bottom { flex-wrap: wrap; }
+  .footer-bottom > span:nth-child(2) { display: flex; }
+}
+
+@media (max-width: 360px) {
+  .hero-buttons .button { padding-inline: 8px; gap: 5px; }
+  .hero-buttons .button > svg:last-child:not(:first-child) { display: none; }
+}
