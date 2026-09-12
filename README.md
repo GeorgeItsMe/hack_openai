@@ -4,7 +4,7 @@
 
 <h1 align="center">Less chaos. More focus.</h1>
 <p align="center">A context-aware Chrome extension for tasks, focus sessions, and a calmer browser.<br><strong>Built as a working hackathon prototype.</strong></p>
-<p align="center"><a href="https://tabby-pi.vercel.app/">Try Tabby</a> · <a href="docs/INSTALLATION.md">Install the extension</a> · <a href="#what-works">Features</a> · <a href="#development">Development</a></p>
+<p align="center"><a href="https://tabby-pi.vercel.app/">Try Tabby</a> · <a href="docs/INSTALLATION.md">Install the extension</a> · <a href="#why-we-built-tabby">The concept</a> · <a href="#what-works">Features</a> · <a href="#development">Development</a></p>
 
 **[Download Tabby.zip](https://tabby-pi.vercel.app/downloads/Tabby.zip)** — ready to install in Chrome. Unzip it, enable Developer mode, then choose Load unpacked and select the Tabby folder. [Three-step guide](docs/INSTALLATION.md). AI and connected tools have separate optional setup below.
 
@@ -16,9 +16,15 @@
 
 ## Why we built Tabby
 
+**We live in a distracted world.** Work, messages, feeds, meetings, and endless recommendations all compete for the same attention. Our browser puts them a click apart. You open a tab to finish something, follow one link, check one message, and suddenly have 37 tabs and a very good question: what was I doing?
+
+We built Tabby around that moment. The idea is to keep your intention visible while you move through a noisy digital world, and make finding your way back feel easy. Getting distracted is human. Returning should feel like picking up a thread, without a guilt trip.
+
 A tutorial and a distraction can live on the same website. Blocking the domain misses the point: what matters is the goal you started with.
 
 Tabby keeps that goal close. Start a focus session, let the extension assess the page using the context you allow, and get a gentle nudge when you drift. Correct a suggestion, take a break, or return to your working tab. You stay in control.
+
+Tasks, projects, notes, connected tools, and browser tabs support the same idea: keep the next meaningful step close to the work itself. Our ambition is a calmer place to work, where technology helps you spend your attention on what you choose.
 
 ## What works
 
